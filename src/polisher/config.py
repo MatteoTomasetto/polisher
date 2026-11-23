@@ -25,7 +25,7 @@ def default_hotkeys() -> dict[str, str]:
 def _defaults() -> dict:
     return {
         "general": {
-            "provider": "anthropic",
+            "provider": "openrouter",
             "default_mode": "polish",
             "suggestions": 3,
             "preview": True,         # menu: show a diff and let you choose
@@ -36,6 +36,12 @@ def _defaults() -> dict:
         "hotkeys": default_hotkeys(),
         "providers": {
             "anthropic": {"model": "claude-haiku-5-5", "api_key_env": "ANTHROPIC_API_KEY"},
+            "openrouter": {
+                "kind": "openai",
+                "model": "openrouter/free",
+                "base_url": "https://openrouter.ai/api/v1",
+                "api_key_env": "OPENROUTER_API_KEY",
+            },
             "openai": {
                 "model": "gpt-4o-mini",
                 "base_url": "https://api.openai.com/v1",

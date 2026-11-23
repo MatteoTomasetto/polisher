@@ -12,7 +12,7 @@ def test_init_writes_a_loadable_config():
     assert paths.config_file().is_file()
     from polisher.config import load_config
 
-    assert load_config().general["provider"] == "anthropic"
+    assert load_config().general["provider"] == "openrouter"
     with pytest.raises(SystemExit):
         cli.main(["init"])  # refuses to overwrite
 

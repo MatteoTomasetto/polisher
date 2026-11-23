@@ -2,7 +2,7 @@
 # Everything here is optional: delete what you don't need.
 
 [general]
-provider = "anthropic"     # anthropic | openai | ollama
+provider = "openrouter"   # openrouter (free models) | ollama (local) | anthropic | openai
 default_mode = "polish"    # what the quick hotkey runs
 suggestions = 3            # how many alternatives the menu hotkey asks for
 preview = true             # menu hotkey: show a diff and let you pick before replacing
@@ -23,7 +23,14 @@ model = "claude-haiku-5-5"
 api_key_env = "ANTHROPIC_API_KEY"   # name of the environment variable holding your key
 # api_key = "sk-..."                # or put it here (not recommended)
 
-[providers.openai]                  # also works for OpenRouter, LM Studio, vLLM, ...
+[providers.openrouter]               # free hosted models via OpenRouter
+kind = "openai"
+model = "openrouter/free"
+base_url = "https://openrouter.ai/api/v1"
+api_key_env = "OPENROUTER_API_KEY"
+# api_key = "sk-or-..."              # alternatively put key here (not recommended)
+
+[providers.openai]                  # OpenAI, LM Studio, vLLM, etc.
 model = "gpt-4o-mini"
 base_url = "https://api.openai.com/v1"
 api_key_env = "OPENAI_API_KEY"
