@@ -1,0 +1,75 @@
+# Polisher configuration. Copy to your config folder with:  polisher init
+# Everything here is optional: delete what you don't need.
+
+[general]
+provider = "anthropic"     # anthropic | openai | ollama
+default_mode = "polish"    # what the quick hotkey runs
+suggestions = 3            # how many alternatives the menu hotkey asks for
+preview = true             # menu hotkey: show a diff and let you pick before replacing
+quick_suggestions = 1      # quick hotkey: exactly one result...
+quick_preview = false      # ...replaced right away (undo with the app's Ctrl+Z / Cmd+Z)
+latex_aware = "auto"       # auto | always | never  (keeps \commands, $math$, \cite{..} untouched)
+history = true             # keep a local log of original/result pairs
+
+[hotkeys]                  # same defaults on Windows, Linux and macOS. "" disables one.
+polish = "ctrl+alt+p"      # quick: polish the selection, one result, no questions asked
+menu = "ctrl+alt+m"        # menu: polish, rephrase (tone), translate (language), compress, ...
+# Modifiers: ctrl, shift, alt (option), cmd. Ctrl+P is not the default because it is "Print"
+# in most apps; you can still use it ("ctrl+p"). On Windows the key is swallowed so Print
+# will not open; on Linux/macOS it will.
+
+[providers.anthropic]
+model = "claude-haiku-5-5"
+api_key_env = "ANTHROPIC_API_KEY"   # name of the environment variable holding your key
+# api_key = "sk-..."                # or put it here (not recommended)
+
+[providers.openai]                  # also works for OpenRouter, LM Studio, vLLM, ...
+model = "gpt-4o-mini"
+base_url = "https://api.openai.com/v1"
+api_key_env = "OPENAI_API_KEY"
+
+[providers.ollama]                  # fully local, nothing leaves your machine
+model = "llama3.1"
+base_url = "http://localhost:11434"
+
+# --- Modes --------------------------------------------------------------------
+# Built in: polish, rephrase (tone), translate (language), compress, expand, synonym,
+# fix grammar, academic tone. Change the lists of tones/languages like this:
+#
+# [modes.translate]
+# choices = ["english", "italian", "french", "german", "swedish"]
+# default_choice = "italian"      # used by the quick hotkey / a dedicated hotkey
+#
+# [modes.rephrase]
+# choices = ["neutral", "formal", "casual", "playful"]
+#
+# In the menu you can also type any tone or language that is not in the list.
+#
+# Custom modes (a prompt is all you need; add {choice} and "choices" for a second step):
+# [modes.casual_email]
+# label = "Casual email"
+# prompt = "Rewrite as a friendly, concise email. Keep every fact."
+# hotkey = "ctrl+alt+e"     # optional dedicated hotkey
+# suggestions = 2           # optional override
+#
+# [modes.to_italian]               # translation with its own one-key hotkey, no menu
+# label = "to italian"
+# prompt = "Translate the text into Italian."
+# hotkey = "ctrl+alt+i"
+# suggestions = 1
+
+# --- Per-app profiles ---------------------------------------------------------
+# The first matching profile wins. Match on window title and/or process name (regex).
+# Any [general] key can be overridden.
+#
+# [[profiles]]
+# name = "Overleaf"
+# match_title = "Overleaf"
+# latex_aware = "always"
+# default_mode = "academic"
+# preview = false
+#
+# [[profiles]]
+# name = "Terminal"
+# match_app = "gnome-terminal|WindowsTerminal|iTerm"
+# provider = "ollama"

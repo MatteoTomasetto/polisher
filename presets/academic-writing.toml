@@ -1,0 +1,24 @@
+# Install with:  polisher presets add presets/academic-writing.toml
+[meta]
+name = "Academic writing"
+
+[modes.abstract_tighten]
+label = "Tighten abstract"
+prompt = "Tighten this passage for a paper abstract: remove filler, keep every claim and number, active voice where natural."
+suggestions = 2
+
+[modes.hedge]
+label = "Add scientific hedging"
+prompt = "Soften over-strong claims with appropriate hedging (e.g. 'suggests', 'is consistent with') without changing the finding."
+suggestions = 2
+
+[modes.reviewer_reply]
+label = "Polite reviewer reply"
+prompt = "Rewrite as a courteous, precise response to a peer reviewer. Keep every technical point."
+suggestions = 2
+
+[[profiles]]
+name = "Overleaf (academic by default)"
+match_title = "overleaf"
+default_mode = "academic"
+latex_aware = "always"

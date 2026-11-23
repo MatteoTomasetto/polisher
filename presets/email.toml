@@ -1,0 +1,15 @@
+# Install with:  polisher presets add presets/email.toml
+[meta]
+name = "Email"
+
+[modes.email_friendly]
+label = "Email: friendly"
+prompt = "Rewrite as a warm, concise email. Keep every fact, date and request."
+
+[modes.email_formal]
+label = "Email: formal"
+prompt = "Rewrite as a formal, courteous email. Keep every fact, date and request."
+
+[modes.email_firm]
+label = "Email: firm but polite"
+prompt = "Rewrite so the request is clear and firm while staying polite. Keep every fact and deadline."

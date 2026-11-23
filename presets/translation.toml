@@ -1,0 +1,23 @@
+# One-step translations. The built-in "translate" mode already lets you pick a language in the
+# menu; these give each language its own mode so you can bind a hotkey to it.
+# Install with:  polisher presets add presets/translation.toml
+# Then add a hotkey in your config.toml, for example:
+#   [modes.translate_it]
+#   hotkey = "ctrl+alt+i"
+[meta]
+name = "Translation shortcuts"
+
+[modes.translate_it]
+label = "to italian"
+prompt = "Translate the text into Italian. Keep the tone and formatting. Output only the translation."
+suggestions = 1
+
+[modes.translate_fr]
+label = "to french"
+prompt = "Translate the text into French. Keep the tone and formatting. Output only the translation."
+suggestions = 1
+
+[modes.translate_es]
+label = "to spanish"
+prompt = "Translate the text into Spanish. Keep the tone and formatting. Output only the translation."
+suggestions = 1
