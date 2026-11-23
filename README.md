@@ -11,7 +11,7 @@ Polisher is a small desktop utility for editing selected text with an LLM. Selec
 
 The menu workflow is: **choose an action → choose its option (for example Polish → light / medium / hard) → review the result → Replace**. Press `Esc` to cancel at any stage. In the review window, use `1`, `2`, `3` to switch between suggestions, `Enter` or **Replace** to apply, and `Esc` to keep the original. Your application's undo command (`Ctrl+Z` or `Cmd+Z`) undoes the replacement.
 
-The popup is positioned near the mouse pointer. Status and error messages appear at that same location. A successful replacement displays “text replaced”; an unchanged result displays “no changes suggested”; errors include a reason rather than silently leaving the selection untouched.
+The popup uses the system font when available (Inter or Ubuntu on Linux), a dark high-contrast palette and clearer spacing. It is positioned near the mouse pointer. Status and error messages appear at that same location. A successful replacement displays “text replaced”; an unchanged result displays “no changes suggested”; errors include a reason rather than silently leaving the selection untouched.
 
 ## Actions
 
@@ -37,7 +37,7 @@ The `Ctrl+Alt+P` shortcut always uses medium polish. The menu exposes the three 
 - macOS: grant the terminal/application Accessibility and Input Monitoring permissions.
 - Windows: no additional system packages are normally required.
 
-## Install
+## Install and automatic startup
 
 From a source checkout:
 
@@ -55,11 +55,35 @@ python -m pip install -e ".[dev]"
 pytest
 ```
 
-On Ubuntu/Debian, if Tkinter is missing:
+On Ubuntu/Debian, install the desktop dependencies:
 
 ```bash
 sudo apt install python3-tk xclip xdotool
 ```
+
+After installing the package (or upgrading to a version with autostart support), run init:
+
+```bash
+polisher init
+```
+
+On Linux, `polisher init` creates the default configuration **and registers Polisher
+for automatic startup at your next desktop login**. It writes a standard XDG
+`.desktop` entry under `~/.config/autostart/` (or `$XDG_CONFIG_HOME/autostart/`).
+You do not need to keep a terminal open. To start it immediately in the current
+session, run `polisher` once; after that, future desktop logins start it automatically.
+
+Manage this behavior at any time:
+
+```bash
+polisher autostart status    # check whether login startup is enabled
+polisher autostart install   # enable it
+polisher autostart remove    # disable it
+```
+
+To create the configuration without registering automatic startup, use
+`polisher init --no-autostart`. Running `polisher init` again is safe: it keeps your existing configuration and ensures the startup entry is installed. Automatic desktop startup is currently implemented
+for Linux/XDG desktops. On other operating systems, start Polisher manually.
 
 ## Configure a provider
 
@@ -174,7 +198,8 @@ Useful checks:
 | Command | Purpose |
 | --- | --- |
 | `polisher` or `polisher run` | Start the background app. |
-| `polisher init` | Create the default configuration. |
+| `polisher init` | Create the default configuration and enable Linux login startup. |
+| `polisher autostart status/install/remove` | Check, enable or disable automatic startup. |
 | `polisher config-path` | Print the configuration path. |
 | `polisher doctor` | Check Python dependencies, clipboard, hotkeys and configuration. |
 | `polisher test "text" --mode polish --choice hard` | Test a mode from the terminal. |

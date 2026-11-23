@@ -10,6 +10,7 @@ from pathlib import Path
 
 from . import __version__, paths
 from .config import ConfigError, load_config, read_toml, validate_preset
+from . import autostart
 
 
 def _load():
@@ -40,11 +41,19 @@ def cmd_run(args) -> None:
 def cmd_init(args) -> None:
     target = paths.config_file()
     if target.exists() and not args.force:
-        sys.exit(f"{target} already exists (use --force to overwrite).")
-    target.parent.mkdir(parents=True, exist_ok=True)
-    example = resources.files("polisher").joinpath("config.example.toml")
-    target.write_text(example.read_text(encoding="utf-8"), encoding="utf-8")
-    print(f"Wrote {target}")
+        print(f"Keeping existing configuration: {target}")
+    else:
+        target.parent.mkdir(parents=True, exist_ok=True)
+        example = resources.files("polisher").joinpath("config.example.toml")
+        target.write_text(example.read_text(encoding="utf-8"), encoding="utf-8")
+        print(f"Wrote {target}")
+    if not args.no_autostart:
+        try:
+            entry = autostart.install()
+            print(f"Enabled automatic startup: {entry}")
+            print("Polisher will start in the background at your next desktop login.")
+        except RuntimeError as exc:
+            print(f"Automatic startup not configured: {exc}")
 
 
 def cmd_config_path(args) -> None:
@@ -186,6 +195,20 @@ def cmd_doctor(args) -> None:
         print(f"[INFO] provider '{name}' at {pcfg.get('base_url')} (no key needed)")
 
 
+def cmd_autostart(args) -> None:
+    if args.action == "install":
+        try:
+            print(f"Enabled automatic startup: {autostart.install()}")
+        except RuntimeError as exc:
+            sys.exit(str(exc))
+    elif args.action == "remove":
+        print("Automatic startup removed." if autostart.remove() else "No autostart entry was installed.")
+    else:
+        print(f"Automatic startup: {'enabled' if autostart.is_installed() else 'disabled'}")
+        if autostart.is_installed():
+            print(autostart.desktop_file())
+
+
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(prog="polisher", description="Polish text anywhere with an LLM.")
     parser.add_argument("--version", action="version", version=f"polisher {__version__}")
@@ -193,6 +216,7 @@ def main(argv: list[str] | None = None) -> None:
     sub.add_parser("run", help="start the background app (default)").set_defaults(func=cmd_run)
     p = sub.add_parser("init", help="write a commented config file")
     p.add_argument("--force", action="store_true")
+    p.add_argument("--no-autostart", action="store_true", help="do not enable automatic startup")
     p.set_defaults(func=cmd_init)
     sub.add_parser("config-path", help="print the config file location").set_defaults(func=cmd_config_path)
     sub.add_parser("modes", help="list available modes").set_defaults(func=cmd_modes)
@@ -213,6 +237,9 @@ def main(argv: list[str] | None = None) -> None:
     p.add_argument("action", choices=["add", "list"])
     p.add_argument("source", nargs="?", help="file path or URL of a preset .toml")
     p.set_defaults(func=cmd_presets)
+    p = sub.add_parser("autostart", help="manage automatic desktop startup")
+    p.add_argument("action", choices=["install", "remove", "status"], nargs="?", default="status")
+    p.set_defaults(func=cmd_autostart)
 
     args = parser.parse_args(argv)
     (args.func if args.cmd else cmd_run)(args)

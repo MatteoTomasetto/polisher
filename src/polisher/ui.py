@@ -15,13 +15,13 @@ from typing import Callable
 
 from .diffview import similarity, word_diff
 
-BG, PANEL, BORDER, ROW = "#16171b", "#121317", "#2c2e35", "#22242a"
-FG, MUTED, ACCENT = "#d9dbe1", "#6c717c", "#8fb4ff"
-DEL_FG, INS_FG, INS_BG = "#f08a8a", "#8fe3b0", "#14281d"
+BG, PANEL, BORDER, ROW = "#171a21", "#11151c", "#303846", "#242b37"
+FG, MUTED, ACCENT = "#e8edf5", "#8995a7", "#9bbcff"
+DEL_FG, INS_FG, INS_BG = "#ff9a9a", "#9ce6bd", "#193326"
 
 _FONT_CANDIDATES = (
-    "SF Pro Text", ".AppleSystemUIFont", "Segoe UI Variable Text", "Segoe UI",
-    "Inter", "Cantarell", "Noto Sans", "DejaVu Sans",
+    "Inter", "Ubuntu", "SF Pro Text", ".AppleSystemUIFont",
+    "Segoe UI Variable Text", "Segoe UI", "Cantarell", "Noto Sans", "DejaVu Sans",
 )
 
 
@@ -40,6 +40,8 @@ class UI:
         family = next((f for f in _FONT_CANDIDATES if f in available),
                       tkfont.nametofont("TkDefaultFont").actual("family"))
         self.font, self.small = (family, 11), (family, 9)
+        self.heading = (family, 9, "bold")
+        self.body_font = (family, 12)
         self._jobs: queue.Queue = queue.Queue()
         self._busy: tk.Toplevel | None = None
         self.root.after(25, self._pump)
@@ -178,8 +180,8 @@ class UI:
             win = self._borderless(root, interactive=True)
             inner = tk.Frame(win, bg=BG)
             inner.pack(padx=1, pady=1)
-            header = tk.Label(inner, text=title, bg=BG, fg=MUTED, font=self.small, anchor="w",
-                              padx=16, width=28)
+            header = tk.Label(inner, text=title, bg=BG, fg=MUTED, font=self.heading, anchor="w",
+                              padx=16, width=30)
             header.pack(fill="x", pady=(12, 6))
             body = tk.Frame(inner, bg=BG)
             body.pack(fill="x", padx=6, pady=(0, 8))
@@ -236,7 +238,7 @@ class UI:
                     bar = tk.Frame(row, width=2, bg=BG)
                     bar.pack(side="left", fill="y")
                     label = tk.Label(row, text=item.label.lower(), bg=BG, fg=FG, font=self.font,
-                                     anchor="w", padx=12, pady=5)
+                                     anchor="w", padx=14, pady=8)
                     label.pack(side="left", fill="x", expand=True)
                     hint_text = "›" if item.submenu else (str(i + 1) if i < 9 else "")
                     hint = tk.Label(row, text=hint_text, bg=BG, fg=MUTED, font=self.small, padx=12)
@@ -373,7 +375,7 @@ class UI:
             foot.pack(side="bottom", fill="x", padx=14, pady=12)
             body = tk.Text(win, wrap="word", bg=PANEL, fg=FG, insertbackground=FG, relief="flat",
                            padx=16, pady=14, borderwidth=0, highlightthickness=0,
-                           font=(self.font[0], 12), spacing3=4)
+                           font=self.body_font, spacing3=5, spacing1=1)
             body.pack(fill="both", expand=True, padx=14, pady=4)
             body.tag_configure("delete", foreground=DEL_FG, overstrike=True)
             body.tag_configure("insert", foreground=INS_FG, background=INS_BG)

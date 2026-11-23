@@ -13,8 +13,12 @@ def test_init_writes_a_loadable_config():
     from polisher.config import load_config
 
     assert load_config().general["provider"] == "openrouter"
-    with pytest.raises(SystemExit):
-        cli.main(["init"])  # refuses to overwrite
+    from polisher import autostart
+    assert autostart.is_installed()
+    # Re-running init preserves the existing config and enables autostart idempotently.
+    before = paths.config_file().read_text()
+    cli.main(["init"])
+    assert paths.config_file().read_text() == before
 
 
 def test_shipped_presets_install_and_add_modes(capsys):

@@ -25,6 +25,7 @@ src/polisher.egg-info/dependency_links.txt
 src/polisher.egg-info/entry_points.txt
 src/polisher.egg-info/requires.txt
 src/polisher.egg-info/top_level.txt
+tests/test_app_flow.py
 tests/test_cli.py
 tests/test_config.py
 tests/test_diff_history.py
