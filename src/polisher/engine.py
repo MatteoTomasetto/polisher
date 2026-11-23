@@ -78,25 +78,46 @@ class Engine:
         max_tokens = min(8192, max(512, len(text) // 3 * n + 256))
 
         provider = self.provider(settings.get("provider", self.cfg.general["provider"]))
-        try:
-            raw = provider.complete(
-                system, f"<text>\n{payload}\n</text>", temperature=temperature, max_tokens=max_tokens
-            )
-        except ProviderError as exc:
-            raise EngineError(str(exc)) from exc
+        # Free model endpoints occasionally return an empty response or omit the
+        # required option/LaTeX markers. Retry those *application-level* failures
+        # rather than making the user invoke the hotkey again.
+        max_attempts = 3
+        last_issue = "empty response"
+        for attempt in range(max_attempts):
+            attempt_system = system
+            if attempt:
+                correction = (
+                    "Your previous response was unusable (" + last_issue + "). "
+                    "Try again. Return only the requested edited text, using the exact "
+                    "<option>...</option> format. Do not include commentary."
+                )
+                if mapping:
+                    correction += " Preserve every protected token exactly: " + ", ".join(mapping)
+                attempt_system = system + "\n\nRETRY INSTRUCTION: " + correction
+            try:
+                raw = provider.complete(
+                    attempt_system, f"<text>\n{payload}\n</text>",
+                    temperature=temperature, max_tokens=max_tokens
+                )
+            except ProviderError as exc:
+                raise EngineError(str(exc)) from exc
 
-        results: list[str] = []
-        dropped = 0
-        for option in parse_options(raw):
-            restored = latex.restore(option, mapping) if mapping else option
-            if restored is None:
-                dropped += 1
-                continue
-            final = _keep_outer_space(text, restored)
-            if final not in results:
-                results.append(final)
-        if not results:
-            hint = " (it altered the protected LaTeX, try again)" if dropped else ""
-            raise EngineError(f"The model returned nothing usable{hint}.")
-        changed = [r for r in results if r.strip() != text.strip()]
-        return (changed or results)[:n]
+            results: list[str] = []
+            dropped = 0
+            for option in parse_options(raw):
+                restored = latex.restore(option, mapping) if mapping else option
+                if restored is None:
+                    dropped += 1
+                    continue
+                final = _keep_outer_space(text, restored)
+                if final not in results:
+                    results.append(final)
+            if results:
+                changed = [r for r in results if r.strip() != text.strip()]
+                return (changed or results)[:n]
+            last_issue = "response was empty" if not raw.strip() else (
+                "protected LaTeX tokens were missing" if dropped else "no non-empty options found"
+            )
+
+        hint = " (the response omitted protected LaTeX; all retries failed)" if mapping and dropped else ""
+        raise EngineError(f"The model returned nothing usable after {max_attempts} attempts{hint}.")

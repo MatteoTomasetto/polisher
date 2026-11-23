@@ -101,7 +101,15 @@ class OpenAIProvider(Provider):
             },
         )
         try:
-            return data["choices"][0]["message"]["content"] or ""
+            content = data["choices"][0]["message"]["content"]
+            # Some OpenAI-compatible providers return content as a list of text
+            # blocks instead of a plain string.
+            if isinstance(content, list):
+                content = "".join(
+                    block.get("text", "") for block in content
+                    if isinstance(block, dict) and block.get("type", "text") == "text"
+                )
+            return content or ""
         except (KeyError, IndexError, TypeError) as exc:
             raise ProviderError(f"Unexpected response from openai: {str(data)[:200]}") from exc
 

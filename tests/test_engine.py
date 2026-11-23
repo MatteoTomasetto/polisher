@@ -107,3 +107,28 @@ def test_choice_defaults_when_not_given():
     engine, cfg, fake = engine_with("<option>x</option>")
     engine.run("ciao", cfg.modes["translate"], cfg.general)
     assert "into english." in fake.calls[0][0]
+
+
+def test_retries_empty_response_then_returns_result():
+    replies = iter(["", "<option>Polished text.</option>"])
+    engine, cfg, fake = engine_with(lambda _user: next(replies))
+    out = engine.run("rough text", cfg.modes["polish"], {**cfg.general, "suggestions": 1})
+    assert out == ["Polished text."]
+    assert len(fake.calls) == 2
+    assert "RETRY INSTRUCTION" in fake.calls[1][0]
+
+
+def test_retries_when_protected_latex_token_is_missing():
+    replies = iter(["<option>Broken equation.</option>", "<option>Good @@L0@@ result.</option>"])
+    engine, cfg, fake = engine_with(lambda _user: next(replies))
+    out = engine.run(r"Text with $x$", cfg.modes["polish"], {**cfg.general, "suggestions": 1})
+    assert out == [r"Good $x$ result."]
+    assert len(fake.calls) == 2
+    assert "@@L0@@" in fake.calls[1][0]
+
+
+def test_still_errors_after_retries_if_all_responses_empty():
+    engine, cfg, fake = engine_with("")
+    with pytest.raises(EngineError, match="after 3 attempts"):
+        engine.run("rough text", cfg.modes["polish"], cfg.general)
+    assert len(fake.calls) == 3

@@ -90,3 +90,14 @@ def test_http_error_and_unreachable(server):
 def test_unknown_provider():
     with pytest.raises(ProviderError):
         make_provider("mystery", {})
+
+
+def test_openai_compatible_accepts_text_block_content():
+    p = make_provider("openrouter", {"kind": "openai", "model": "m", "base_url": "http://example"})
+    p._post = lambda *_args, **_kwargs: {
+        "choices": [{"message": {"content": [
+            {"type": "text", "text": "part one"},
+            {"type": "text", "text": " part two"},
+        ]}}]
+    }
+    assert call(p) == "part one part two"
