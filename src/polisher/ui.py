@@ -318,6 +318,16 @@ class UI:
 
         self.post(build)
 
+    def show_status(self, message: str, pos: tuple[int, int], ms: int = 2600) -> None:
+        """Show a short completion/no-op message at the same position as the menu."""
+        def build(root, done):
+            win = self._borderless(root)
+            tk.Label(win, text=message.lower(), bg=BG, fg=FG, font=self.font,
+                     padx=14, pady=9, wraplength=380, justify="left").pack(padx=1, pady=1)
+            self._place(win, pos[0] + 14, pos[1] + 18)
+            win.after(ms, lambda: win.winfo_exists() and win.destroy())
+        self.post(build)
+
     def show_error(self, message: str, pos: tuple[int, int], ms: int = 9000) -> None:
         """Show an actionable error popup where the menu appeared; dismiss on click/Esc."""
         def build(root, done):

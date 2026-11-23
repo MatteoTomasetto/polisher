@@ -46,7 +46,8 @@ class App:
     def trigger(self, *, mode_key: str | None = None, menu: bool = False) -> None:
         """menu=False is the quick path: one result, pasted straight away."""
         if not self._lock.acquire(blocking=False):
-            return  # already working on something
+            self._show_status("polisher is already working", self._last_popup_pos)
+            return
         try:
             self._process(mode_key, menu)
         except (EngineError, clipboard.ClipboardError) as exc:
@@ -64,6 +65,13 @@ class App:
             show(message, self._last_popup_pos, 9000)
         else:  # compatibility with small test/fake UIs
             self.ui.toast(message, 9000)
+
+    def _show_status(self, message: str, pos=None) -> None:
+        show = getattr(self.ui, "show_status", None)
+        if show:
+            show(message, pos or self._last_popup_pos, 2600)
+        else:
+            self.ui.toast(message, 2600)
 
     def _pick_choice(self, mode, pos) -> str | None:
         last = self._last_choice.get(mode.key) or mode.default()
@@ -84,7 +92,7 @@ class App:
         try:
             text = clipboard.copy_selection()
             if not text.strip():
-                self.ui.toast("select some text first")
+                self._show_status("select some text first", self._last_popup_pos)
                 return
 
             pos = self.ui.pointer()
@@ -117,12 +125,17 @@ class App:
                 chosen = self.ui.review(text, options, f"{mode.label} · {choice}" if choice else mode.label)
             else:
                 chosen = options[0]
-            if chosen is None or chosen == text:
+            if chosen is None:
+                self._show_status("cancelled — original text kept", pos)
                 return
-            if menu or preview:  # our windows had focus: hand it back before pasting
-                reactivate(window)
-                time.sleep(0.25)
+            if chosen.strip() == text.strip():
+                self._show_status("no changes suggested — original text kept", pos)
+                return
 
+            # The popup/preview may have taken keyboard focus. Explicitly reactivate the
+            # original application before sending the paste keystroke on every platform.
+            reactivate(window)
+            time.sleep(0.30)
             clipboard.paste_text(chosen)  # one paste = one undo step in the app
             if self.history is not None:
                 self.history.add(
@@ -130,5 +143,6 @@ class App:
                     mode=f"{mode.key}:{choice}" if choice else mode.key,
                     provider=settings.get("provider", ""), original=text, result=chosen,
                 )
+            self._show_status("text replaced", pos)
         finally:
             clipboard.write(previous)

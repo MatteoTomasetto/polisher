@@ -11,6 +11,7 @@ from dataclasses import dataclass
 class WindowInfo:
     app: str = ""
     title: str = ""
+    window_id: str = ""
 
 
 def _run(cmd: list[str]) -> str:
@@ -63,6 +64,7 @@ def _mac() -> WindowInfo:
 
 def _linux() -> WindowInfo:
     # Needs xdotool (X11). On Wayland this returns an empty WindowInfo.
+    window_id = _run(["xdotool", "getactivewindow"])
     title = _run(["xdotool", "getactivewindow", "getwindowname"])
     pid = _run(["xdotool", "getactivewindow", "getwindowpid"])
     app = ""
@@ -72,7 +74,7 @@ def _linux() -> WindowInfo:
                 app = fh.read().strip()
         except OSError:
             pass
-    return WindowInfo(app=app, title=title)
+    return WindowInfo(app=app, title=title, window_id=window_id)
 
 
 def get_active_window() -> WindowInfo:
@@ -87,8 +89,9 @@ def get_active_window() -> WindowInfo:
 
 
 def reactivate(window: WindowInfo) -> None:
-    """macOS: after our own windows closed, bring the user's app back to the front so the
-    paste lands there. Windows and Linux hand focus back on their own."""
-    if sys.platform == "darwin" and window.app:
+    """Bring the original target application back before simulating Ctrl/Cmd+V."""
+    if sys.platform.startswith("linux") and window.window_id:
+        _run(["xdotool", "windowactivate", "--sync", window.window_id])
+    elif sys.platform == "darwin" and window.app:
         name = window.app.replace("\\", "\\\\").replace('"', '\\"')
         _run(["osascript", "-e", f'tell application "{name}" to activate'])

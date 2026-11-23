@@ -1,201 +1,200 @@
-# polisher
+# Polisher
 
-Select text in **any app** (Word, Overleaf, a browser, a chat, a text editor), press a hotkey, and an LLM
-polishes, rephrases, translates, compresses or expands it. The result replaces your selection.
-
-![menu](docs/menu.png)
+Polisher is a small desktop utility for editing selected text with an LLM. Select text in an application, press a global hotkey, choose an action, and Polisher pastes the result back into the original application. It is designed for browsers, email clients, Word processors, IDEs, terminals and scientific-writing tools such as Overleaf.
 
 ## Hotkeys
 
-The defaults are the same on Windows, Linux and macOS.
-
-| Hotkey | What it does |
+| Shortcut | Action |
 | --- | --- |
-| `Ctrl+Alt+P` | **Medium polish.** One result, pasted straight over your selection. No questions asked. |
-| `Ctrl+Alt+M` | **Menu.** A small popup with every mode; you get several options and a diff preview. |
-| your app's undo | `Ctrl+Z` (`Cmd+Z` on macOS) undoes a replacement. It is a single paste, so one undo brings your text back. |
+| `Ctrl+Alt+P` | Run **medium polish** immediately (one result, no preview by default). |
+| `Ctrl+Alt+M` | Open the action menu. |
 
-Why not `Ctrl+P`? It means *Print* in almost every app (and "previous line" on macOS). You can still use it:
-set `polish = "ctrl+p"` under `[hotkeys]`. On Windows the key is swallowed, so Print won't open; on Linux and macOS it will.
+The menu workflow is: **choose an action → choose its option (for example Polish → light / medium / hard) → review the result → Replace**. Press `Esc` to cancel at any stage. In the review window, use `1`, `2`, `3` to switch between suggestions, `Enter` or **Replace** to apply, and `Esc` to keep the original. Your application's undo command (`Ctrl+Z` or `Cmd+Z`) undoes the replacement.
 
-## Modes
+The popup is positioned near the mouse pointer. Status and error messages appear at that same location. A successful replacement displays “text replaced”; an unchanged result displays “no changes suggested”; errors include a reason rather than silently leaving the selection untouched.
 
-| Mode | |
-| --- | --- |
-| polish | Choose light, medium or hard intensity (medium is the quick-hotkey default). |
-| rephrase › tone | neutral, formal, casual, friendly, confident, persuasive, empathetic, academic |
-| translate › language | english, italian, french, spanish, german, portuguese, dutch, russian, chinese, japanese |
-| compress | Same ideas, fewer words |
-| expand | Longer: adds detail, an explanation or an example that fits |
-| synonym | Five replacement words for the selection |
-| fix grammar | Grammar and spelling only, nothing else |
-| academic tone | Formal scientific register |
+## Actions
 
-Modes marked `›` open a second step (including **polish**, where you choose light, medium or hard). In any menu: arrows + `Enter`, `Esc`, `1`-`9`, or **just type to filter**.
-In the language/tone step, anything you type that isn't in the list can be used too (`use "swedish"`).
-The menu remembers your last tone/language per mode while Polisher runs.
+- **Polish** — choose light, medium or hard intensity.
+  - Light: grammar, spelling and punctuation with minimal wording changes.
+  - Medium: noticeably improve vocabulary, clarity, sentence structure and flow.
+  - Hard: substantially rewrite and restructure while preserving meaning and technical details.
+- **Rephrase** — choose a tone (neutral, formal, casual, friendly, confident, persuasive, empathetic or academic).
+- **Translate** — choose a target language.
+- **Compress** — express the same ideas in fewer words.
+- **Expand** — add helpful explanation or detail without inventing facts.
+- **Synonym** — suggest replacements for a selected word or phrase.
+- **Fix grammar** — correct grammar, spelling and punctuation only.
+- **Academic tone** — rewrite in a precise scientific register.
 
-![preview](docs/preview.png)
+The `Ctrl+Alt+P` shortcut always uses medium polish. The menu exposes the three intensity choices and all other actions.
 
-The menu hotkey then shows a **diff preview**: red is removed, green is added, `1`-`3` switch between options,
-`Enter` replaces, `Esc` cancels. Heavy rewrites and translations open in a clean view instead of a diff.
+## Requirements
 
-The popup appears at the **mouse pointer** (the text caret position isn't available across apps).
-
-## More features
-
-- **LaTeX-aware**: commands, `$math$`, environments, `\cite{}`, `\ref{}` and `%` comments are hidden from the model and restored afterwards. If the model damages one, that suggestion is discarded.
-- **Bring your own model**: Anthropic, any OpenAI-compatible API (OpenAI, OpenRouter, LM Studio, vLLM...) or **Ollama** for fully local use.
-- **Per-app profiles**: a different provider, mode or preview setting depending on the window (e.g. Overleaf).
-- **History**: every original/result pair is stored locally; restore any original from the command line.
-- **Shareable presets**: drop a `.toml` of modes and profiles into a folder or install it from a URL.
+- Python 3.11 or newer.
+- An LLM provider: OpenRouter, OpenAI, Anthropic, an OpenAI-compatible server, or Ollama.
+- Linux: an X11 session is recommended. Install `python3-tk`, `xclip` and `xdotool` (`sudo apt install python3-tk xclip xdotool`). Wayland restricts global keyboard hooks and simulated clipboard shortcuts; behavior depends on the desktop environment.
+- macOS: grant the terminal/application Accessibility and Input Monitoring permissions.
+- Windows: no additional system packages are normally required.
 
 ## Install
 
-Requires Python 3.11+.
+From a source checkout:
 
 ```bash
-pipx install git+https://github.com/YOUR_USER/polisher
-# or, from a clone:  pip install -e .
+python -m venv .venv
+source .venv/bin/activate          # Windows: .venv\\Scripts\\activate
+python -m pip install --upgrade pip
+python -m pip install -e .
 ```
 
-- **Linux**: `sudo apt install python3-tk xclip xdotool`, and use an X11 session (Wayland restricts global hotkeys).
-- **macOS**: allow your terminal under *System Settings > Privacy & Security* for **Accessibility** and **Input Monitoring**, and allow it to control *System Events* when asked.
-- **Windows**: nothing extra.
-
-## Quick start
+For development and tests:
 
 ```bash
-export OPENROUTER_API_KEY=sk-or-...  # free models via OpenRouter
-# Or use Ollama locally (no API key), see below
-polisher doctor                      # checks clipboard, hotkeys, key, config
-polisher test "me and him goes to the shop yesterday"    # try the LLM without the GUI
-polisher test "ciao a tutti" --mode translate --choice english
-polisher                             # start it and leave it running
+python -m pip install -e ".[dev]"
+pytest
 ```
 
-Then select text anywhere and press `Ctrl+Alt+P`.
+On Ubuntu/Debian, if Tkinter is missing:
 
+```bash
+sudo apt install python3-tk xclip xdotool
+```
 
-### Free options (no Anthropic API required)
+## Configure a provider
 
-**Recommended: OpenRouter free models.** Create an API key at [OpenRouter](https://openrouter.ai/keys). You can set `OPENROUTER_API_KEY` in the environment, but if you launch Polisher from a desktop shortcut or application launcher, that process may not inherit variables exported in your terminal. In that case, put the key directly in the config file shown by `polisher config-path`:
+Start by creating the configuration file:
+
+```bash
+polisher init
+polisher config-path
+```
+
+The default provider is OpenRouter's free-model router. Create an API key at [openrouter.ai/keys](https://openrouter.ai/keys), then add it to the `[providers.openrouter]` section of the file printed by `polisher config-path`:
 
 ```toml
+[general]
+provider = "openrouter"
+
 [providers.openrouter]
 kind = "openai"
 model = "openrouter/free"
 base_url = "https://openrouter.ai/api/v1"
-api_key = "sk-or-v1-YOUR-ACTUAL-KEY"
+api_key = "sk-or-v1-YOUR-KEY"
 ```
 
-Keep this file private. Do not include the key in screenshots or share the config. A 401 response means OpenRouter rejected the key; check for a revoked, incomplete, or incorrect key and create a replacement if needed. The default model automatically routes to an available free model. Free models are rate-limited and availability/model quality can vary. The app uses OpenRouter's OpenAI-compatible API.
+Keep `config.toml` private; do not commit or share your API key. Alternatively, set `OPENROUTER_API_KEY` in the environment of the process that launches Polisher. If you start Polisher from a desktop launcher, it may not inherit variables exported in a terminal, so putting the key in the config file is often simpler.
 
-**Fully local alternative: Ollama.** Install [Ollama](https://ollama.com), download a model (e.g. `ollama pull llama3.1`), and set `provider = "ollama"`. This has no API fees, keeps selected text on your machine, and works offline after the model is downloaded; performance depends on your hardware.
+`openrouter/free` dynamically routes to an available free model. The exact model can change, and free models can have rate limits or temporary availability issues. A 401 error means the key was rejected; verify it, replace it if revoked, and restart Polisher after changing configuration.
 
-For OpenRouter, free-tier limits and model availability can change. Do not send sensitive text to hosted providers unless you are comfortable with their data policies.
+### Other providers
 
-## Configuration
-
-`polisher init` writes a commented `config.toml` (`polisher config-path` shows where). Examples:
+**Ollama (local, no API key):** install [Ollama](https://ollama.com), download a model, then set:
 
 ```toml
 [general]
-provider = "openrouter"        # openrouter | ollama | anthropic | openai
-quick_suggestions = 1          # quick hotkey: how many results (1 = replace immediately)
-quick_preview = false          # set true to see the diff for the quick hotkey too
-suggestions = 3                # menu hotkey: how many options
-preview = true
+provider = "ollama"
+
+[providers.ollama]
+model = "llama3.1"
+base_url = "http://localhost:11434"
+```
+
+For a hosted OpenAI-compatible endpoint, configure its `base_url`, `model`, and API key under a provider section with `kind = "openai"`. OpenAI and Anthropic can also be configured in `config.toml`; see `config.example.toml`.
+
+## Configuration reference
+
+The main settings are in `config.toml`:
+
+```toml
+[general]
+provider = "openrouter"
+quick_suggestions = 1       # number of results for Ctrl+Alt+P
+quick_preview = false       # true shows a review window for the quick shortcut
+suggestions = 3             # number of suggestions in the menu workflow
+preview = true               # show the review window after menu actions
+latex_aware = "auto"        # auto | always | never
+history = true
 
 [hotkeys]
 polish = "ctrl+alt+p"
 menu = "ctrl+alt+m"
+```
 
-# your own languages and tones (you can also type any other one in the menu)
-[modes.translate]
-choices = ["english", "italian", "french", "swedish"]
-default_choice = "italian"     # used when a hotkey runs this mode without the menu
+Per-application profiles can change settings based on the active window title or process name. For example, to always protect LaTeX in Overleaf:
 
-[modes.rephrase]
-choices = ["neutral", "formal", "casual", "playful"]
-
-# a dedicated one-key mode
-[modes.to_italian]
-label = "to italian"
-prompt = "Translate the text into Italian. Output only the translation."
-hotkey = "ctrl+alt+i"
-suggestions = 1
-
-# per-app settings: first matching profile wins
+```toml
 [[profiles]]
 name = "Overleaf"
 match_title = "Overleaf"
-default_mode = "academic"
-quick_preview = true
 latex_aware = "always"
 ```
 
-A mode is just a prompt. To give a mode choices, put `{choice}` in the prompt and list them in `choices`.
-Overleaf and `.tex` windows already default to `latex_aware = "always"`.
+## LaTeX support
 
-### Presets
+When LaTeX-aware mode is enabled, commands, math, environments, citations, references and comments are temporarily hidden from the model and restored afterwards. If a suggestion drops a protected token, Polisher rejects that suggestion and retries rather than risking a damaged formula or command. Overleaf and `.tex` windows are detected automatically.
+
+## Presets
+
+Presets add reusable modes and per-app profiles. They cannot configure providers, API keys or destination URLs.
 
 ```bash
-polisher presets add presets/email.toml
-polisher presets add https://raw.githubusercontent.com/someone/repo/main/my-preset.toml
 polisher presets list
+polisher presets add presets/academic-writing.toml
 polisher modes
 ```
 
-Presets can only contain modes and profiles, never providers, keys or URLs, so installing one cannot redirect your text elsewhere.
+The repository includes example presets for academic writing, email and translation.
+
+## Troubleshooting
+
+Run the diagnostic command first:
+
+```bash
+polisher doctor
+```
+
+Test the provider without the global hotkey or GUI:
+
+```bash
+polisher test "This sentence need to be improved." --mode polish --choice medium
+```
+
+Useful checks:
+
+1. Confirm that text is selected before pressing the shortcut.
+2. Confirm that the provider key is configured in the same user account that launches Polisher.
+3. On Linux, use an X11 session and confirm `xclip` and `xdotool` are installed.
+4. If the menu opens but the replacement does not appear, check whether the review window is waiting for **Replace** or `Enter`.
+5. Check the message displayed beside the popup. Polisher reports provider errors, cancellation and unchanged suggestions there.
+6. Use the application's undo shortcut if a replacement lands incorrectly.
 
 ## Commands
 
-| Command | |
+| Command | Purpose |
 | --- | --- |
-| `polisher` / `polisher run` | Start the background app |
-| `polisher test "text" --mode rephrase --choice formal` | Run a mode from the terminal |
-| `polisher modes` | List modes and their choices |
-| `polisher history` / `--restore ID` / `--clear` | Browse history, copy an original back to the clipboard |
-| `polisher presets add/list` | Manage presets |
-| `polisher doctor` | Diagnose your setup |
-
-## How it works
-
-On a hotkey, polisher presses Copy, reads the clipboard, asks the model, then presses Paste and restores your previous
-clipboard text. That is why it works in every app, and why it only handles text (an image on the clipboard is not restored).
-
-## What has been tested
-
-| | |
-| --- | --- |
-| Logic (LaTeX protection, prompts, providers, config, presets, profiles, history, hotkey matching) | 53 unit tests pass on Linux; a GitHub Actions workflow is included to run them on all three OSes |
-| **Linux / X11**: hotkey-less end-to-end run with a fake LLM: copy, menu, submenu, typing a custom language, diff preview, paste, cancel | verified |
-| **Windows**: key swallowing, bringing the popup to the foreground | written from the documentation, **not run yet** |
-| **macOS**: matching `Ctrl+Alt+P` by physical key, focusing the popup, returning to your app before pasting | written from the documentation, **not run yet** |
-
-If the popup doesn't react to the keyboard on Windows or macOS, the mouse still works, and every mode can be given its own hotkey (see above) so you can skip the menu.
-Please open an issue with your OS version and what happened.
+| `polisher` or `polisher run` | Start the background app. |
+| `polisher init` | Create the default configuration. |
+| `polisher config-path` | Print the configuration path. |
+| `polisher doctor` | Check Python dependencies, clipboard, hotkeys and configuration. |
+| `polisher test "text" --mode polish --choice hard` | Test a mode from the terminal. |
+| `polisher modes` | List available modes and choices. |
+| `polisher history` | Show recent local edits. |
+| `polisher history --restore ID` | Copy the original text of an edit back to the clipboard. |
+| `polisher history --clear` | Clear local history. |
 
 ## Privacy
 
-The selected text is sent to the provider you configure. Use `provider = "ollama"` to keep everything on your machine.
-History is a local SQLite file; set `history = false` to disable it. API keys are read from environment variables by default.
+Selected text is sent to the provider configured by the user. Hosted providers process that text according to their own terms and privacy policies. Use Ollama for local processing. Edit history is stored locally; set `history = false` to disable it.
 
 ## Development
 
 ```bash
-pip install -e ".[dev]"
+python -m pip install -e ".[dev]"
 pytest
-# GUI end-to-end test on Linux (virtual display + window manager + fake editor and LLM):
-sudo apt install xvfb openbox xdotool xclip python3-tk
-xvfb-run -a bash -c "openbox & sleep 1.5; python tests/manual/smoke_x11.py"
 ```
 
-## Roadmap
-
-Browser extension (true right-click menu), macOS Services entry, Android text-selection action, tray icon,
-packaged installers (PyInstaller / MSI / dmg).
+The tests cover prompt construction, provider parsing, retries, LaTeX protection, configuration, presets, history and hotkey matching. GUI focus and paste behavior should also be smoke-tested on the target operating system and desktop session.
 
 ## License
 
