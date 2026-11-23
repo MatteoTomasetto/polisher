@@ -125,6 +125,10 @@ def validate_preset(data: dict) -> None:
 def _merge_modes(target: dict[str, dict], source: dict | None) -> None:
     for key, mode in (source or {}).items():
         merged = {**target.get(key, {}), **mode}
+        # Replacing a built-in prompt without supplying choices means the user wants
+        # a simple custom mode, not the built-in prompt's now-incompatible submenu.
+        if "prompt" in mode and "choices" not in mode and target.get(key, {}).get("choices"):
+            merged.update(choices=[], choice_label="", default_choice="")
         target[key] = merged
 
 

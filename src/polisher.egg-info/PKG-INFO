@@ -81,7 +81,8 @@ pipx install git+https://github.com/YOUR_USER/polisher
 ## Quick start
 
 ```bash
-export ANTHROPIC_API_KEY=sk-...      # or configure OpenAI / Ollama, see below
+export OPENROUTER_API_KEY=sk-or-...  # free models via OpenRouter
+# Or use Ollama locally (no API key), see below
 polisher doctor                      # checks clipboard, hotkeys, key, config
 polisher test "me and him goes to the shop yesterday"    # try the LLM without the GUI
 polisher test "ciao a tutti" --mode translate --choice english
@@ -90,13 +91,22 @@ polisher                             # start it and leave it running
 
 Then select text anywhere and press `Ctrl+Alt+P`.
 
+
+### Free options (no Anthropic API required)
+
+**Recommended: OpenRouter free models.** Create an API key at [OpenRouter](https://openrouter.ai/keys), then set `OPENROUTER_API_KEY` in your environment (or put it in `config.toml` as `api_key`, which is less secure). The default config uses `model = "openrouter/free"`, which automatically routes to an available free model. Free models are rate-limited and availability/model quality can vary. The app uses OpenRouter's OpenAI-compatible API, so no code changes are needed to switch models.
+
+**Fully local alternative: Ollama.** Install [Ollama](https://ollama.com), download a model (e.g. `ollama pull llama3.1`), and set `provider = "ollama"`. This has no API fees, keeps selected text on your machine, and works offline after the model is downloaded; performance depends on your hardware.
+
+For OpenRouter, free-tier limits and model availability can change. Do not send sensitive text to hosted providers unless you are comfortable with their data policies.
+
 ## Configuration
 
 `polisher init` writes a commented `config.toml` (`polisher config-path` shows where). Examples:
 
 ```toml
 [general]
-provider = "ollama"            # anthropic | openai | ollama
+provider = "openrouter"        # openrouter | ollama | anthropic | openai
 quick_suggestions = 1          # quick hotkey: how many results (1 = replace immediately)
 quick_preview = false          # set true to see the diff for the quick hotkey too
 suggestions = 3                # menu hotkey: how many options

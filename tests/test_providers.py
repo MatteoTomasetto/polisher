@@ -101,3 +101,21 @@ def test_openai_compatible_accepts_text_block_content():
         ]}}]
     }
     assert call(p) == "part one part two"
+
+
+def test_openrouter_401_explains_key_setup(monkeypatch):
+    import httpx
+
+    request = httpx.Request("POST", "https://openrouter.ai/api/v1/chat/completions")
+    response = httpx.Response(401, request=request, text='{"error":"Invalid API key"}')
+
+    def fail(*args, **kwargs):
+        raise httpx.HTTPStatusError("unauthorized", request=request, response=response)
+
+    monkeypatch.setattr(httpx, "post", fail)
+    p = make_provider("openrouter", {
+        "kind": "openai", "model": "openrouter/free",
+        "base_url": "https://openrouter.ai/api/v1", "api_key": "bad-key",
+    })
+    with pytest.raises(ProviderError, match="OpenRouter rejected the API key"):
+        call(p)

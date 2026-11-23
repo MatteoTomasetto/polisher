@@ -12,7 +12,7 @@ latex_aware = "auto"       # auto | always | never  (keeps \commands, $math$, \c
 history = true             # keep a local log of original/result pairs
 
 [hotkeys]                  # same defaults on Windows, Linux and macOS. "" disables one.
-polish = "ctrl+alt+p"      # quick: polish the selection, one result, no questions asked
+polish = "ctrl+alt+p"      # quick: medium polish, one result, no questions asked
 menu = "ctrl+alt+m"        # menu: polish, rephrase (tone), translate (language), compress, ...
 # Modifiers: ctrl, shift, alt (option), cmd. Ctrl+P is not the default because it is "Print"
 # in most apps; you can still use it ("ctrl+p"). On Windows the key is swallowed so Print
@@ -40,7 +40,7 @@ model = "llama3.1"
 base_url = "http://localhost:11434"
 
 # --- Modes --------------------------------------------------------------------
-# Built in: polish, rephrase (tone), translate (language), compress, expand, synonym,
+# Built in: polish (light/medium/hard), rephrase (tone), translate (language), compress, expand, synonym,
 # fix grammar, academic tone. Change the lists of tones/languages like this:
 #
 # [modes.translate]

@@ -9,7 +9,11 @@ def test_new_builtin_modes_and_choices():
     assert {"polish", "rephrase", "translate", "compress", "expand"} <= set(modes)
     assert "formal" in modes["rephrase"].choices and modes["rephrase"].choice_label == "tone"
     assert "italian" in modes["translate"].choices and modes["translate"].default() == "english"
-    assert modes["polish"].choices == ()
+    assert modes["polish"].choices == ("light", "medium", "hard")
+    assert modes["polish"].default() == "medium"
+    assert modes["polish"].choice_label == "intensity"
+    assert "noticeably improve vocabulary" in modes["polish"].render("medium")
+    assert "thorough rewrite" in modes["polish"].render("hard")
 
 
 def test_render_substitutes_choice_and_default():

@@ -38,10 +38,19 @@ BUILTIN_MODES: dict[str, dict] = {
     "polish": {
         "label": "polish",
         "prompt": (
-            "Polish the text: fix grammar, spelling and punctuation and improve clarity and "
-            "flow. Keep the author's meaning, voice and level of formality. Make the smallest "
-            "changes that give a clear improvement and do not add new information."
+            "Polish the text with {choice} intensity. Preserve the author's meaning, factual "
+            "claims, technical details and intended tone. Do not add new information. "
+            "For light: correct grammar, spelling and punctuation, making only small edits. "
+            "For medium: noticeably improve vocabulary, clarity, sentence structure, readability "
+            "and flow; replace awkward or repetitive wording and restructure sentences when useful. "
+            "For hard: perform a thorough rewrite, substantially improving phrasing, rhythm, "
+            "structure and flow; combine or split sentences and reorganize the passage when "
+            "beneficial, while preserving every important idea and the author's voice. "
+            "Return only the improved text."
         ),
+        "choices": ["light", "medium", "hard"],
+        "choice_label": "intensity",
+        "default_choice": "medium",
     },
     "rephrase": {
         "label": "rephrase",

@@ -318,6 +318,29 @@ class UI:
 
         self.post(build)
 
+    def show_error(self, message: str, pos: tuple[int, int], ms: int = 9000) -> None:
+        """Show an actionable error popup where the menu appeared; dismiss on click/Esc."""
+        def build(root, done):
+            win = self._borderless(root)
+            panel = tk.Frame(win, bg=BG)
+            panel.pack(padx=1, pady=1)
+            tk.Label(panel, text="polisher · error", bg=BG, fg="#f08a8a", font=self.small,
+                     anchor="w", padx=14, pady=(10, 4)).pack(fill="x")
+            tk.Label(panel, text=message, bg=BG, fg=FG, font=self.font, padx=14, pady=6,
+                     wraplength=430, justify="left", anchor="w").pack(fill="x")
+            hint = tk.Label(panel, text="click or press esc to dismiss", bg=BG, fg=MUTED,
+                            font=self.small, anchor="e", padx=14, pady=(4, 9))
+            hint.pack(fill="x")
+            def close(_event=None):
+                if win.winfo_exists():
+                    win.destroy()
+            win.bind("<Button-1>", close)
+            win.bind("<Escape>", close)
+            self._place(win, pos[0] + 14, pos[1] + 18)
+            win.after(ms, close)
+
+        self.post(build)
+
     # -- diff preview ---------------------------------------------------------------
     def review(self, original: str, options: list[str], title: str) -> str | None:
         def build(root, done):

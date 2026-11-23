@@ -39,7 +39,16 @@ class Provider:
             response.raise_for_status()
             return response.json()
         except httpx.HTTPStatusError as exc:
-            body = exc.response.text[:300]
+            body = exc.response.text[:500]
+            if self.name == "openrouter" and exc.response.status_code == 401:
+                raise ProviderError(
+                    "OpenRouter rejected the API key (HTTP 401). Check that your config.toml "
+                    "[providers.openrouter] section contains the current key as api_key = "
+                    '"sk-or-v1-..."' + " OR that OPENROUTER_API_KEY is set in the environment "
+                    "of the process that launches Polisher. If the key was revoked or copied "
+                    "incorrectly, create a new one at openrouter.ai/keys. "
+                    f"Provider response: {body}"
+                ) from exc
             raise ProviderError(f"{self.name} returned {exc.response.status_code}: {body}") from exc
         except httpx.ConnectError as exc:
             raise ProviderError(f"Cannot reach {url}. Is the server running?") from exc

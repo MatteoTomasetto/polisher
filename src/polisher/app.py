@@ -23,6 +23,7 @@ class App:
         self.history = history
         self._lock = threading.Lock()
         self._last_choice: dict[str, str] = {}  # remembered per mode while the app runs
+        self._last_popup_pos = (40, 40)
 
         bindings = {
             cfg.hotkeys.get("polish", ""): lambda: self.trigger(),
@@ -49,12 +50,20 @@ class App:
         try:
             self._process(mode_key, menu)
         except (EngineError, clipboard.ClipboardError) as exc:
-            self.ui.toast(str(exc), 5000)
+            self._show_error(str(exc))
         except Exception as exc:  # never let a hotkey thread die silently
             traceback.print_exc()
-            self.ui.toast(f"error: {exc}", 5000)
+            self._show_error(f"error: {exc}")
         finally:
             self._lock.release()
+
+    def _show_error(self, message: str) -> None:
+        """Show failures at the popup/menu location instead of the screen corner."""
+        show = getattr(self.ui, "show_error", None)
+        if show:
+            show(message, self._last_popup_pos, 9000)
+        else:  # compatibility with small test/fake UIs
+            self.ui.toast(message, 9000)
 
     def _pick_choice(self, mode, pos) -> str | None:
         last = self._last_choice.get(mode.key) or mode.default()
@@ -79,6 +88,7 @@ class App:
                 return
 
             pos = self.ui.pointer()
+            self._last_popup_pos = pos
             choice = None
             if menu:
                 items = [Item(k, m.label, submenu=bool(m.choices)) for k, m in self.cfg.modes.items()]

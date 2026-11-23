@@ -11,7 +11,7 @@ The defaults are the same on Windows, Linux and macOS.
 
 | Hotkey | What it does |
 | --- | --- |
-| `Ctrl+Alt+P` | **Quick polish.** One result, pasted straight over your selection. No questions asked. |
+| `Ctrl+Alt+P` | **Medium polish.** One result, pasted straight over your selection. No questions asked. |
 | `Ctrl+Alt+M` | **Menu.** A small popup with every mode; you get several options and a diff preview. |
 | your app's undo | `Ctrl+Z` (`Cmd+Z` on macOS) undoes a replacement. It is a single paste, so one undo brings your text back. |
 
@@ -22,7 +22,7 @@ set `polish = "ctrl+p"` under `[hotkeys]`. On Windows the key is swallowed, so P
 
 | Mode | |
 | --- | --- |
-| polish | Grammar, spelling, clarity. Minimal changes. |
+| polish | Choose light, medium or hard intensity (medium is the quick-hotkey default). |
 | rephrase › tone | neutral, formal, casual, friendly, confident, persuasive, empathetic, academic |
 | translate › language | english, italian, french, spanish, german, portuguese, dutch, russian, chinese, japanese |
 | compress | Same ideas, fewer words |
@@ -31,7 +31,7 @@ set `polish = "ctrl+p"` under `[hotkeys]`. On Windows the key is swallowed, so P
 | fix grammar | Grammar and spelling only, nothing else |
 | academic tone | Formal scientific register |
 
-Modes marked `›` open a second step. In any menu: arrows + `Enter`, `Esc`, `1`-`9`, or **just type to filter**.
+Modes marked `›` open a second step (including **polish**, where you choose light, medium or hard). In any menu: arrows + `Enter`, `Esc`, `1`-`9`, or **just type to filter**.
 In the language/tone step, anything you type that isn't in the list can be used too (`use "swedish"`).
 The menu remembers your last tone/language per mode while Polisher runs.
 
@@ -79,7 +79,17 @@ Then select text anywhere and press `Ctrl+Alt+P`.
 
 ### Free options (no Anthropic API required)
 
-**Recommended: OpenRouter free models.** Create an API key at [OpenRouter](https://openrouter.ai/keys), then set `OPENROUTER_API_KEY` in your environment (or put it in `config.toml` as `api_key`, which is less secure). The default config uses `model = "openrouter/free"`, which automatically routes to an available free model. Free models are rate-limited and availability/model quality can vary. The app uses OpenRouter's OpenAI-compatible API, so no code changes are needed to switch models.
+**Recommended: OpenRouter free models.** Create an API key at [OpenRouter](https://openrouter.ai/keys). You can set `OPENROUTER_API_KEY` in the environment, but if you launch Polisher from a desktop shortcut or application launcher, that process may not inherit variables exported in your terminal. In that case, put the key directly in the config file shown by `polisher config-path`:
+
+```toml
+[providers.openrouter]
+kind = "openai"
+model = "openrouter/free"
+base_url = "https://openrouter.ai/api/v1"
+api_key = "sk-or-v1-YOUR-ACTUAL-KEY"
+```
+
+Keep this file private. Do not include the key in screenshots or share the config. A 401 response means OpenRouter rejected the key; check for a revoked, incomplete, or incorrect key and create a replacement if needed. The default model automatically routes to an available free model. Free models are rate-limited and availability/model quality can vary. The app uses OpenRouter's OpenAI-compatible API.
 
 **Fully local alternative: Ollama.** Install [Ollama](https://ollama.com), download a model (e.g. `ollama pull llama3.1`), and set `provider = "ollama"`. This has no API fees, keeps selected text on your machine, and works offline after the model is downloaded; performance depends on your hardware.
 
