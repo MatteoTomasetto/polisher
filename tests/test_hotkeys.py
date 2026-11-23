@@ -78,3 +78,18 @@ def test_wait_for_release_returns_when_keys_up():
     hk.wait_for_release(timeout=0.05)  # times out instead of hanging
     hk._down.clear()
     hk.wait_for_release(timeout=5)
+
+
+def test_key_repeat_does_not_trigger_same_hotkey_twice(monkeypatch):
+    monkeypatch.setattr(sys, "platform", "linux")
+    hits = []
+    hk = make(hits)
+    hk._on_press(CTRL)
+    hk._on_press(ALT)
+    key_p = K(char="p", vk=112)
+    hk._on_press(key_p)
+    hk._on_press(key_p)  # OS auto-repeat while the key is still held
+    assert hits == ["polish"]
+    hk._on_release(key_p)
+    hk._on_press(key_p)
+    assert hits == ["polish", "polish"]

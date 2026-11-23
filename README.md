@@ -275,3 +275,12 @@ The tests cover prompt construction, provider parsing, retries, LaTeX protection
 ## License
 
 MIT
+
+
+## Interface
+
+The popup and review window use platform-native font preferences (Segoe UI on
+Windows, SF Pro/Helvetica on macOS, and Ubuntu, Cantarell or Noto Sans on Linux).
+The alternatives preview uses regular-weight body text with softer
+insertion/deletion highlights, rather than bolding every changed span. The menu
+has a clearer header, separators, selection state and spacing.

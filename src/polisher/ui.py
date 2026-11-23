@@ -15,15 +15,17 @@ from typing import Callable
 
 from .diffview import similarity, word_diff
 
-BG, PANEL, BORDER, ROW = "#171a21", "#11151c", "#303846", "#242b37"
-FG, MUTED, ACCENT = "#f1f4fa", "#a5b0c0", "#a8c5ff"
-DEL_FG, DEL_BG = "#ffc0c0", "#48272d"
-INS_FG, INS_BG = "#c3f6d8", "#174632"
+BG, PANEL, BORDER, ROW = "#171b23", "#202631", "#354052", "#293342"
+FG, MUTED, ACCENT = "#edf1f7", "#aab5c4", "#8fb5ff"
+DEL_FG, DEL_BG = "#f3b5b5", "#493238"
+INS_FG, INS_BG = "#bce8cc", "#254536"
 
-_FONT_CANDIDATES = (
-    "Inter", "Ubuntu", "SF Pro Text", ".AppleSystemUIFont",
-    "Segoe UI Variable Text", "Segoe UI", "Cantarell", "Noto Sans", "DejaVu Sans",
-)
+# Prefer the platform UI font; avoid selecting a decorative or unfamiliar font.
+_FONT_CANDIDATES = {
+    "win32": ("Segoe UI", "Arial"),
+    "darwin": ("SF Pro Text", ".AppleSystemUIFont", "Helvetica Neue"),
+    "linux": ("Ubuntu", "Cantarell", "Noto Sans", "DejaVu Sans"),
+}
 
 
 @dataclass(frozen=True)
@@ -38,14 +40,19 @@ class UI:
         self.root = tk.Tk()
         self.root.withdraw()
         available = set(tkfont.families(self.root))
-        family = next((f for f in _FONT_CANDIDATES if f in available),
+        platform = "win32" if sys.platform == "win32" else ("darwin" if sys.platform == "darwin" else "linux")
+        family = next((f for f in _FONT_CANDIDATES[platform] if f in available),
                       tkfont.nametofont("TkDefaultFont").actual("family"))
-        # Slightly larger type is important in the diff view: inserted/deleted words
-        # must remain readable at a glance, not just be distinguishable by colour.
-        self.font, self.small = (family, 12), (family, 10)
-        self.heading = (family, 10, "bold")
-        self.body_font = (family, 14)
-        self.diff_font = (family, 14, "bold")
+        self.font = tkfont.Font(root=self.root, family=family, size=11)
+        self.small = tkfont.Font(root=self.root, family=family, size=9)
+        self.heading = tkfont.Font(root=self.root, family=family, size=10, weight="bold")
+        # Use Tk's native text font for the reading pane rather than imposing a
+        # hand-picked family. It maps to the platform's standard readable UI font.
+        native_text = tkfont.nametofont("TkTextFont")
+        self.body_font = native_text.copy()
+        self.body_font.configure(size=12, weight="normal")
+        self.diff_font = self.body_font.copy()
+        self.diff_font.configure(size=12, weight="normal")
         self._jobs: queue.Queue = queue.Queue()
         self._busy: tk.Toplevel | None = None
         self.root.after(25, self._pump)
@@ -184,11 +191,17 @@ class UI:
             win = self._borderless(root, interactive=True)
             inner = tk.Frame(win, bg=BG)
             inner.pack(padx=1, pady=1)
-            header = tk.Label(inner, text=title, bg=BG, fg=MUTED, font=self.heading, anchor="w",
-                              padx=16, width=30)
-            header.pack(fill="x", pady=(12, 6))
+            top = tk.Frame(inner, bg=BG)
+            top.pack(fill="x", padx=14, pady=(12, 9))
+            mark = tk.Label(top, text="P", bg=ACCENT, fg="#152033", font=self.heading,
+                            width=2, pady=3)
+            mark.pack(side="left", padx=(0, 9))
+            header = tk.Label(top, text=title, bg=BG, fg=FG, font=self.heading, anchor="w")
+            header.pack(side="left", fill="x", expand=True)
+            tk.Label(top, text="ESC  close", bg=BG, fg=MUTED, font=self.small).pack(side="right")
+            tk.Frame(inner, bg=BORDER, height=1).pack(fill="x", padx=10)
             body = tk.Frame(inner, bg=BG)
-            body.pack(fill="x", padx=6, pady=(0, 8))
+            body.pack(fill="x", padx=8, pady=(7, 9))
             state = {"query": "", "index": start, "closed": False, "visible": [], "rows": []}
 
             def close(value):
@@ -241,11 +254,12 @@ class UI:
                     row = tk.Frame(body, bg=BG, cursor="hand2")
                     bar = tk.Frame(row, width=2, bg=BG)
                     bar.pack(side="left", fill="y")
-                    label = tk.Label(row, text=item.label.lower(), bg=BG, fg=FG, font=self.font,
-                                     anchor="w", padx=14, pady=8)
+                    label = tk.Label(row, text=item.label, bg=BG, fg=FG, font=self.font,
+                                     anchor="w", padx=13, pady=9)
                     label.pack(side="left", fill="x", expand=True)
                     hint_text = "›" if item.submenu else (str(i + 1) if i < 9 else "")
-                    hint = tk.Label(row, text=hint_text, bg=BG, fg=MUTED, font=self.small, padx=12)
+                    hint = tk.Label(row, text=hint_text, bg=BG, fg=ACCENT if item.submenu else MUTED,
+                                    font=self.small, padx=12)
                     hint.pack(side="right")
                     row.pack(fill="x")
                     for widget in (row, bar, label, hint):
@@ -377,15 +391,18 @@ class UI:
             bar.pack(fill="x", padx=18, pady=(15, 9))
             foot = tk.Frame(win, bg=BG)
             foot.pack(side="bottom", fill="x", padx=18, pady=14)
-            body = tk.Text(win, wrap="word", bg=PANEL, fg=FG, insertbackground=FG, relief="flat",
-                           padx=20, pady=18, borderwidth=0, highlightthickness=0,
-                           font=self.body_font, spacing3=8, spacing1=2, spacing2=2)
-            body.pack(fill="both", expand=True, padx=18, pady=6)
+            body_shell = tk.Frame(win, bg=BORDER, padx=1, pady=1)
+            body_shell.pack(fill="both", expand=True, padx=20, pady=5)
+            body = tk.Text(body_shell, wrap="word", bg=PANEL, fg=FG, insertbackground=FG,
+                           relief="flat", padx=22, pady=20, borderwidth=0,
+                           highlightthickness=0, font=self.body_font,
+                           spacing3=11, spacing1=3, spacing2=3, undo=False)
+            body.pack(fill="both", expand=True)
             body.tag_configure("equal", foreground=FG)
             body.tag_configure("delete", foreground=DEL_FG, background=DEL_BG,
-                               overstrike=True, font=self.diff_font)
+                               overstrike=True, font=self.diff_font, lmargin1=1, rmargin=1)
             body.tag_configure("insert", foreground=INS_FG, background=INS_BG,
-                               font=self.diff_font)
+                               font=self.diff_font, lmargin1=1, rmargin=1)
             tabs: list[tk.Label] = []
 
             def close(value):
@@ -419,6 +436,7 @@ class UI:
                     state["index"] = i
                     render()
 
+            tk.Label(bar, text="POLISHER", bg=BG, fg=ACCENT, font=self.small).pack(side="left", padx=(0, 9))
             tk.Label(bar, text=title, bg=BG, fg=FG, font=self.heading).pack(side="left", padx=(0, 12))
             if len(options) > 1:
                 for i in range(len(options)):
@@ -428,16 +446,17 @@ class UI:
                     tab.bind("<Button-1>", lambda e, i=i: select(i))
                     tabs.append(tab)
             tk.Checkbutton(bar, text="Show changes", variable=show_changes, command=render,
-                           bg=BG, fg=MUTED, selectcolor=PANEL, activebackground=BG,
+                           bg=BG, fg=FG, selectcolor=ROW, activebackground=BG,
                            activeforeground=FG, highlightthickness=0, borderwidth=0,
-                           font=self.small).pack(side="right")
+                           font=self.small, padx=5).pack(side="right")
 
-            tk.Button(foot, text="Replace  ↵", command=lambda: close(options[state["index"]]),
-                      bg=ACCENT, fg=BG, activebackground=ACCENT, relief="flat", borderwidth=0, highlightthickness=0,
-                      font=self.font, padx=16, pady=5, cursor="hand2").pack(side="right")
-            tk.Button(foot, text="Cancel  Esc", command=lambda: close(None), bg=BG, fg=MUTED,
-                      activebackground=BG, relief="flat", borderwidth=0, highlightthickness=0,
-                      font=self.font, padx=12, pady=5, cursor="hand2").pack(side="right", padx=6)
+            tk.Button(foot, text="Replace text  ↵", command=lambda: close(options[state["index"]]),
+                      bg=ACCENT, fg="#142033", activebackground="#a8c7ff", relief="flat",
+                      borderwidth=0, highlightthickness=0, font=self.font,
+                      padx=18, pady=8, cursor="hand2").pack(side="right")
+            tk.Button(foot, text="Cancel", command=lambda: close(None), bg=ROW, fg=FG,
+                      activebackground=BORDER, relief="flat", borderwidth=0, highlightthickness=0,
+                      font=self.font, padx=15, pady=8, cursor="hand2").pack(side="right", padx=8)
             if len(options) > 1:
                 tk.Label(foot, text=f"1–{len(options)}  ·  switch alternative", bg=BG, fg=MUTED,
                          font=self.small).pack(side="left")

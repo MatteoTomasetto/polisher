@@ -71,6 +71,8 @@ class Hotkeys:
                 self._bindings[parsed] = callback
         self._down: set[str] = set()
         self._suppressed: set[int] = set()
+        # Ignore OS key-repeat events until the triggering key is released.
+        self._active_combos: set[tuple[frozenset[str], str]] = set()
         self._listener = None
 
     # -- public -------------------------------------------------------------
@@ -108,12 +110,19 @@ class Hotkeys:
             return  # handled (and swallowed) in _win_filter
         mods = frozenset(self._down)
         for (wanted, name), callback in self._bindings.items():
-            if mods == wanted and self._key_matches(key, name):
+            combo = (wanted, name)
+            if mods == wanted and self._key_matches(key, name) and combo not in self._active_combos:
+                self._active_combos.add(combo)
                 self._threaded(callback)()
 
     def _on_release(self, key) -> None:
         if (mod := _modifier_name(key)) is not None:
             self._down.discard(mod)
+        else:
+            # Clear only the matching key; a repeated key-down cannot open a second menu.
+            for combo in tuple(self._active_combos):
+                if self._key_matches(key, combo[1]):
+                    self._active_combos.discard(combo)
 
     @staticmethod
     def _key_matches(key, name: str) -> bool:
@@ -147,8 +156,9 @@ class Hotkeys:
             mods = self._win_mods()
             for (wanted, key), callback in self._bindings.items():
                 if data.vkCode == win_vk(key) and mods == wanted:
-                    self._suppressed.add(data.vkCode)
-                    self._threaded(callback)()
+                    if data.vkCode not in self._suppressed:
+                        self._suppressed.add(data.vkCode)
+                        self._threaded(callback)()
                     self._listener.suppress_event()
         elif msg in (0x101, 0x105) and data.vkCode in self._suppressed:  # key up
             self._suppressed.discard(data.vkCode)

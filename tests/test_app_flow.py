@@ -85,3 +85,25 @@ def test_changed_result_is_pasted_and_reports_success(monkeypatch):
 
     assert "PASTE:A polished sentence." in writes
     assert any(message == "text replaced" for message, *_ in ui.messages)
+
+
+def test_quick_preview_true_opens_review_for_quick_hotkey(monkeypatch):
+    import polisher.app as app_module
+
+    cfg = load_config()
+    cfg.general["quick_preview"] = True
+    ui = FakeUI(chosen="A polished sentence.")
+    app = App(cfg, ui, engine=FakeEngine(["A polished sentence."]))
+    monkeypatch.setattr(app_module, "get_active_window", lambda: WindowInfo())
+    monkeypatch.setattr(app_module.clipboard, "read", lambda: "previous")
+    monkeypatch.setattr(app_module.clipboard, "copy_selection", lambda: "rough sentence")
+    writes = []
+    monkeypatch.setattr(app_module.clipboard, "write", lambda value: writes.append(value))
+    monkeypatch.setattr(app_module.clipboard, "paste_text", lambda value: writes.append("PASTE:" + value))
+    monkeypatch.setattr(app_module, "reactivate", lambda window: None)
+    monkeypatch.setattr(app_module.time, "sleep", lambda *_: None)
+
+    app._process("polish", False)
+
+    assert ui.review_calls == 1
+    assert "PASTE:A polished sentence." in writes
