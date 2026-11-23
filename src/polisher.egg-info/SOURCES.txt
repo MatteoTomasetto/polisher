@@ -5,6 +5,7 @@ src/polisher/__init__.py
 src/polisher/__main__.py
 src/polisher/activewin.py
 src/polisher/app.py
+src/polisher/autostart.py
 src/polisher/cli.py
 src/polisher/clipboard.py
 src/polisher/config.example.toml
@@ -26,6 +27,7 @@ src/polisher.egg-info/entry_points.txt
 src/polisher.egg-info/requires.txt
 src/polisher.egg-info/top_level.txt
 tests/test_app_flow.py
+tests/test_autostart.py
 tests/test_cli.py
 tests/test_config.py
 tests/test_diff_history.py

@@ -43,7 +43,7 @@ def _windows() -> WindowInfo:
         if kernel32.QueryFullProcessImageNameW(handle, 0, path, ctypes.byref(size)):
             app = os.path.basename(path.value)
         kernel32.CloseHandle(handle)
-    return WindowInfo(app=app, title=buf.value)
+    return WindowInfo(app=app, title=buf.value, window_id=str(hwnd))
 
 
 def _mac() -> WindowInfo:
@@ -92,6 +92,12 @@ def reactivate(window: WindowInfo) -> None:
     """Bring the original target application back before simulating Ctrl/Cmd+V."""
     if sys.platform.startswith("linux") and window.window_id:
         _run(["xdotool", "windowactivate", "--sync", window.window_id])
+    elif sys.platform == "win32" and window.window_id:
+        try:
+            import ctypes
+            ctypes.windll.user32.SetForegroundWindow(int(window.window_id))
+        except (ValueError, OSError):
+            pass
     elif sys.platform == "darwin" and window.app:
         name = window.app.replace("\\", "\\\\").replace('"', '\\"')
         _run(["osascript", "-e", f'tell application "{name}" to activate'])

@@ -19,7 +19,7 @@ menu = "ctrl+alt+m"        # menu: polish, rephrase (tone), translate (language)
 # will not open; on Linux/macOS it will.
 
 [providers.anthropic]
-model = "claude-haiku-5-5"
+model = "claude-haiku-4-5-20251001"
 api_key_env = "ANTHROPIC_API_KEY"   # name of the environment variable holding your key
 # api_key = "sk-..."                # or put it here (not recommended)
 
@@ -31,7 +31,7 @@ api_key_env = "OPENROUTER_API_KEY"
 # api_key = "sk-or-..."              # alternatively put key here (not recommended)
 
 [providers.openai]                  # OpenAI, LM Studio, vLLM, etc.
-model = "gpt-4o-mini"
+model = "gpt-4.1-mini"
 base_url = "https://api.openai.com/v1"
 api_key_env = "OPENAI_API_KEY"
 

@@ -16,8 +16,9 @@ from typing import Callable
 from .diffview import similarity, word_diff
 
 BG, PANEL, BORDER, ROW = "#171a21", "#11151c", "#303846", "#242b37"
-FG, MUTED, ACCENT = "#e8edf5", "#8995a7", "#9bbcff"
-DEL_FG, INS_FG, INS_BG = "#ff9a9a", "#9ce6bd", "#193326"
+FG, MUTED, ACCENT = "#f1f4fa", "#a5b0c0", "#a8c5ff"
+DEL_FG, DEL_BG = "#ffc0c0", "#48272d"
+INS_FG, INS_BG = "#c3f6d8", "#174632"
 
 _FONT_CANDIDATES = (
     "Inter", "Ubuntu", "SF Pro Text", ".AppleSystemUIFont",
@@ -39,9 +40,12 @@ class UI:
         available = set(tkfont.families(self.root))
         family = next((f for f in _FONT_CANDIDATES if f in available),
                       tkfont.nametofont("TkDefaultFont").actual("family"))
-        self.font, self.small = (family, 11), (family, 9)
-        self.heading = (family, 9, "bold")
-        self.body_font = (family, 12)
+        # Slightly larger type is important in the diff view: inserted/deleted words
+        # must remain readable at a glance, not just be distinguishable by colour.
+        self.font, self.small = (family, 12), (family, 10)
+        self.heading = (family, 10, "bold")
+        self.body_font = (family, 14)
+        self.diff_font = (family, 14, "bold")
         self._jobs: queue.Queue = queue.Queue()
         self._busy: tk.Toplevel | None = None
         self.root.after(25, self._pump)
@@ -360,7 +364,7 @@ class UI:
             win.title(f"polisher · {title}")
             win.configure(bg=BG)
             win.attributes("-topmost", True)
-            width, height = 680, 400
+            width, height = 760, 460
             x = (win.winfo_screenwidth() - width) // 2
             y = (win.winfo_screenheight() - height) // 3
             win.geometry(f"{width}x{height}+{x}+{y}")
@@ -370,15 +374,18 @@ class UI:
             show_changes = tk.BooleanVar(value=similarity(original, options[0]) >= 0.5)
 
             bar = tk.Frame(win, bg=BG)
-            bar.pack(fill="x", padx=14, pady=(12, 6))
+            bar.pack(fill="x", padx=18, pady=(15, 9))
             foot = tk.Frame(win, bg=BG)
-            foot.pack(side="bottom", fill="x", padx=14, pady=12)
+            foot.pack(side="bottom", fill="x", padx=18, pady=14)
             body = tk.Text(win, wrap="word", bg=PANEL, fg=FG, insertbackground=FG, relief="flat",
-                           padx=16, pady=14, borderwidth=0, highlightthickness=0,
-                           font=self.body_font, spacing3=5, spacing1=1)
-            body.pack(fill="both", expand=True, padx=14, pady=4)
-            body.tag_configure("delete", foreground=DEL_FG, overstrike=True)
-            body.tag_configure("insert", foreground=INS_FG, background=INS_BG)
+                           padx=20, pady=18, borderwidth=0, highlightthickness=0,
+                           font=self.body_font, spacing3=8, spacing1=2, spacing2=2)
+            body.pack(fill="both", expand=True, padx=18, pady=6)
+            body.tag_configure("equal", foreground=FG)
+            body.tag_configure("delete", foreground=DEL_FG, background=DEL_BG,
+                               overstrike=True, font=self.diff_font)
+            body.tag_configure("insert", foreground=INS_FG, background=INS_BG,
+                               font=self.diff_font)
             tabs: list[tk.Label] = []
 
             def close(value):
@@ -412,7 +419,7 @@ class UI:
                     state["index"] = i
                     render()
 
-            tk.Label(bar, text=title, bg=BG, fg=MUTED, font=self.small).pack(side="left", padx=(0, 12))
+            tk.Label(bar, text=title, bg=BG, fg=FG, font=self.heading).pack(side="left", padx=(0, 12))
             if len(options) > 1:
                 for i in range(len(options)):
                     tab = tk.Label(bar, text=str(i + 1), bg=BG, fg=MUTED, font=self.small,
@@ -420,19 +427,19 @@ class UI:
                     tab.pack(side="left", padx=1)
                     tab.bind("<Button-1>", lambda e, i=i: select(i))
                     tabs.append(tab)
-            tk.Checkbutton(bar, text="show changes", variable=show_changes, command=render,
+            tk.Checkbutton(bar, text="Show changes", variable=show_changes, command=render,
                            bg=BG, fg=MUTED, selectcolor=PANEL, activebackground=BG,
                            activeforeground=FG, highlightthickness=0, borderwidth=0,
                            font=self.small).pack(side="right")
 
-            tk.Button(foot, text="replace  ↵", command=lambda: close(options[state["index"]]),
+            tk.Button(foot, text="Replace  ↵", command=lambda: close(options[state["index"]]),
                       bg=ACCENT, fg=BG, activebackground=ACCENT, relief="flat", borderwidth=0, highlightthickness=0,
                       font=self.font, padx=16, pady=5, cursor="hand2").pack(side="right")
-            tk.Button(foot, text="cancel  esc", command=lambda: close(None), bg=BG, fg=MUTED,
+            tk.Button(foot, text="Cancel  Esc", command=lambda: close(None), bg=BG, fg=MUTED,
                       activebackground=BG, relief="flat", borderwidth=0, highlightthickness=0,
                       font=self.font, padx=12, pady=5, cursor="hand2").pack(side="right", padx=6)
             if len(options) > 1:
-                tk.Label(foot, text=f"1-{len(options)} switch option", bg=BG, fg=MUTED,
+                tk.Label(foot, text=f"1–{len(options)}  ·  switch alternative", bg=BG, fg=MUTED,
                          font=self.small).pack(side="left")
 
             def on_key(event):
