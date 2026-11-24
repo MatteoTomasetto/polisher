@@ -17,16 +17,16 @@ from .diffview import similarity, word_diff
 
 # A calm, high-contrast light palette. The preview is where users spend most of
 # their time comparing text, so keep the canvas white and the diff colours subtle.
-BG, PANEL, BORDER, ROW = "#f3f5f9", "#ffffff", "#d9e0ea", "#e9eef6"
-FG, MUTED, ACCENT = "#202938", "#647187", "#315fc5"
-DEL_FG, DEL_BG = "#9f2938", "#fde9eb"
-INS_FG, INS_BG = "#17633f", "#e3f5e9"
+BG, PANEL, BORDER, ROW = "#171c26", "#202735", "#354154", "#2a3444"
+FG, MUTED, ACCENT = "#edf2fa", "#aab6c8", "#8bb7ff"
+DEL_FG, DEL_BG = "#ffc4ca", "#512d38"
+INS_FG, INS_BG = "#b9f0d0", "#244638"
 
 # Prefer the platform UI font; avoid selecting a decorative or unfamiliar font.
 _FONT_CANDIDATES = {
     "win32": ("Segoe UI", "Arial"),
     "darwin": ("SF Pro Text", ".AppleSystemUIFont", "Helvetica Neue"),
-    "linux": ("Ubuntu", "Cantarell", "Noto Sans", "DejaVu Sans"),
+    "linux": ("Inter", "Noto Sans", "Ubuntu", "DejaVu Sans"),
 }
 
 
@@ -46,13 +46,13 @@ class UI:
         family = next((f for f in _FONT_CANDIDATES[platform] if f in available),
                       tkfont.nametofont("TkDefaultFont").actual("family"))
         self.font = tkfont.Font(root=self.root, family=family, size=11)
-        self.small = tkfont.Font(root=self.root, family=family, size=9)
+        self.small = tkfont.Font(root=self.root, family=family, size=10)
         self.heading = tkfont.Font(root=self.root, family=family, size=11, weight="bold")
         # Use the same known, platform-native family as the rest of the UI. Tk's
         # default text font can be unexpectedly small or inconsistent on Linux.
-        self.body_font = tkfont.Font(root=self.root, family=family, size=14, weight="normal")
+        self.body_font = tkfont.Font(root=self.root, family=family, size=13, weight="normal")
         self.diff_font = self.body_font.copy()
-        self.diff_font.configure(size=14, weight="normal")
+        self.diff_font.configure(size=13, weight="normal")
         self._jobs: queue.Queue = queue.Queue()
         self._busy: tk.Toplevel | None = None
         self.root.after(25, self._pump)
@@ -333,7 +333,7 @@ class UI:
             shell = tk.Frame(panel, bg=BORDER, padx=1, pady=1)
             shell.pack(fill="both", expand=True, padx=20, pady=(0, 14))
             editor = tk.Text(shell, wrap="word", bg=PANEL, fg=FG, insertbackground=ACCENT,
-                             selectbackground="#cbd9f5", selectforeground=FG,
+                             selectbackground="#45618a", selectforeground=FG,
                              relief="flat", borderwidth=0, highlightthickness=0,
                              font=self.body_font, padx=14, pady=13, undo=True,
                              height=7, spacing1=2, spacing3=5)
@@ -362,8 +362,8 @@ class UI:
                 return "break"
 
             tk.Button(foot, text="Apply  ·  Ctrl+Enter", command=submit,
-                      bg=ACCENT, fg="#ffffff", activebackground="#244fae",
-                      activeforeground="#ffffff", relief="flat", borderwidth=0,
+                      bg=ACCENT, fg="#142033", activebackground="#a7c9ff",
+                      activeforeground="#142033", relief="flat", borderwidth=0,
                       highlightthickness=0, font=self.font, padx=17, pady=8,
                       cursor="hand2").pack(side="right")
             tk.Button(foot, text="Cancel", command=lambda: close(None), bg=ROW, fg=FG,
@@ -501,7 +501,7 @@ class UI:
                     body.insert("end", candidate)
                 body.configure(state="disabled")
                 for i, tab in enumerate(tabs):
-                    tab.configure(fg="#ffffff" if i == state["index"] else MUTED,
+                    tab.configure(fg="#142033" if i == state["index"] else MUTED,
                                   bg=ACCENT if i == state["index"] else ROW)
 
             def select(i):
@@ -524,8 +524,8 @@ class UI:
                            font=self.small, padx=5).pack(side="right")
 
             tk.Button(foot, text="Use this version  ↵", command=lambda: close(options[state["index"]]),
-                      bg=ACCENT, fg="#ffffff", activebackground="#244fae",
-                      activeforeground="#ffffff", relief="flat",
+                      bg=ACCENT, fg="#142033", activebackground="#a7c9ff",
+                      activeforeground="#142033", relief="flat",
                       borderwidth=0, highlightthickness=0, font=self.font,
                       padx=18, pady=8, cursor="hand2").pack(side="right")
             tk.Button(foot, text="Cancel", command=lambda: close(None), bg=ROW, fg=FG,

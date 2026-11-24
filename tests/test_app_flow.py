@@ -122,6 +122,7 @@ def test_custom_prompt_is_passed_to_engine(monkeypatch):
     class RecordingEngine(FakeEngine):
         def run(self, text, mode, settings, **kwargs):
             self.mode = mode
+            self.kwargs = kwargs
             return self.result
 
     cfg = load_config()
@@ -141,4 +142,6 @@ def test_custom_prompt_is_passed_to_engine(monkeypatch):
 
     assert engine.mode.key == "custom_prompt"
     assert engine.mode.prompt == "Rewrite this as a concise, friendly email."
+    assert engine.kwargs["n"] == 1
+    assert ui.review_calls == 1
     assert "PASTE:A concise email." in writes

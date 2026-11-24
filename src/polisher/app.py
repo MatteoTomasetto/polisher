@@ -109,7 +109,13 @@ class App:
                     prompt = self.ui.ask_prompt(pos)
                     if prompt is None or not prompt.strip():
                         return
-                    mode = Mode(key="custom_prompt", label="custom prompt", prompt=prompt.strip())
+                    # A one-off instruction is a complete editing action, not a tone/choice.
+                    # Keep it as a first-class Mode so it follows the exact same engine,
+                    # preview, error-reporting and paste path as built-in actions.
+                    mode = Mode(
+                        key="custom_prompt", label="custom prompt", prompt=prompt.strip(),
+                        suggestions=1,
+                    )
                 else:
                     mode = self.cfg.modes[mode_key]
                     if mode.choices:
@@ -131,7 +137,13 @@ class App:
             }
             self.ui.show_busy(busy_labels.get(mode.key, f"working on {mode.label}..."), pos)
             try:
-                options = self.engine.run(text, mode, settings, n=count, choice=choice)
+                options = self.engine.run(
+                    text, mode, settings,
+                    n=(1 if mode.key == "custom_prompt" else count),
+                    choice=choice,
+                )
+                if not options or not any(option.strip() for option in options):
+                    raise EngineError("The model returned an empty result for your custom prompt.")
             finally:
                 self.ui.hide_busy()
 
