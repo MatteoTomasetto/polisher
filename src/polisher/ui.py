@@ -15,10 +15,12 @@ from typing import Callable
 
 from .diffview import similarity, word_diff
 
-BG, PANEL, BORDER, ROW = "#171b23", "#202631", "#354052", "#293342"
-FG, MUTED, ACCENT = "#edf1f7", "#aab5c4", "#8fb5ff"
-DEL_FG, DEL_BG = "#f3b5b5", "#493238"
-INS_FG, INS_BG = "#bce8cc", "#254536"
+# A calm, high-contrast light palette. The preview is where users spend most of
+# their time comparing text, so keep the canvas white and the diff colours subtle.
+BG, PANEL, BORDER, ROW = "#f3f5f9", "#ffffff", "#d9e0ea", "#e9eef6"
+FG, MUTED, ACCENT = "#202938", "#647187", "#315fc5"
+DEL_FG, DEL_BG = "#9f2938", "#fde9eb"
+INS_FG, INS_BG = "#17633f", "#e3f5e9"
 
 # Prefer the platform UI font; avoid selecting a decorative or unfamiliar font.
 _FONT_CANDIDATES = {
@@ -45,12 +47,12 @@ class UI:
                       tkfont.nametofont("TkDefaultFont").actual("family"))
         self.font = tkfont.Font(root=self.root, family=family, size=11)
         self.small = tkfont.Font(root=self.root, family=family, size=9)
-        self.heading = tkfont.Font(root=self.root, family=family, size=10, weight="bold")
+        self.heading = tkfont.Font(root=self.root, family=family, size=11, weight="bold")
         # Use the same known, platform-native family as the rest of the UI. Tk's
         # default text font can be unexpectedly small or inconsistent on Linux.
-        self.body_font = tkfont.Font(root=self.root, family=family, size=13, weight="normal")
+        self.body_font = tkfont.Font(root=self.root, family=family, size=14, weight="normal")
         self.diff_font = self.body_font.copy()
-        self.diff_font.configure(size=13, weight="normal")
+        self.diff_font.configure(size=14, weight="normal")
         self._jobs: queue.Queue = queue.Queue()
         self._busy: tk.Toplevel | None = None
         self.root.after(25, self._pump)
@@ -304,34 +306,41 @@ class UI:
         return self.ask(build)
 
     def ask_prompt(self, pos: tuple[int, int]) -> str | None:
-        """Ask for a free-form instruction to apply to the selected text."""
+        """Show a modal, keyboard-focused editor for a one-off custom instruction."""
         def build(root, done):
-            win = tk.Toplevel(root)
+            # Do not make this window transient to the withdrawn root: on some Linux
+            # window managers that hides the dialog while the hotkey worker waits.
+            win = self._borderless(root, interactive=True)
             win.title("polisher · custom prompt")
-            win.configure(bg=BG)
-            win.attributes("-topmost", True)
-            win.transient(root)
-            width, height = 560, 340
+            win.configure(bg=BORDER)
+            width, height = 590, 390
             x = max(0, (win.winfo_screenwidth() - width) // 2)
             y = max(0, (win.winfo_screenheight() - height) // 3)
             win.geometry(f"{width}x{height}+{x}+{y}")
             state = {"closed": False}
 
-            tk.Label(win, text="CUSTOM PROMPT", bg=BG, fg=ACCENT,
-                     font=self.small, anchor="w").pack(fill="x", padx=18, pady=(16, 5))
-            tk.Label(win, text="What would you like me to do with the selected text?",
-                     bg=BG, fg=FG, font=self.font, anchor="w").pack(fill="x", padx=18, pady=(0, 10))
+            panel = tk.Frame(win, bg=BG)
+            panel.pack(fill="both", expand=True, padx=1, pady=1)
+            tk.Label(panel, text="CUSTOM INSTRUCTION", bg=BG, fg=ACCENT,
+                     font=self.small, anchor="w").pack(fill="x", padx=20, pady=(18, 6))
+            tk.Label(panel, text="What should I do with the selected text?",
+                     bg=BG, fg=FG, font=self.heading, anchor="w").pack(
+                         fill="x", padx=20, pady=(0, 5))
+            tk.Label(panel, text="Describe the result you want. The selected text will be\nkept as the input to your instruction.",
+                     bg=BG, fg=MUTED, font=self.font, justify="left",
+                     anchor="w").pack(fill="x", padx=20, pady=(0, 13))
 
-            shell = tk.Frame(win, bg=BORDER, padx=1, pady=1)
-            shell.pack(fill="both", expand=True, padx=18, pady=(0, 12))
-            editor = tk.Text(shell, wrap="word", bg=PANEL, fg=FG, insertbackground=FG,
+            shell = tk.Frame(panel, bg=BORDER, padx=1, pady=1)
+            shell.pack(fill="both", expand=True, padx=20, pady=(0, 14))
+            editor = tk.Text(shell, wrap="word", bg=PANEL, fg=FG, insertbackground=ACCENT,
+                             selectbackground="#cbd9f5", selectforeground=FG,
                              relief="flat", borderwidth=0, highlightthickness=0,
-                             font=self.body_font, padx=12, pady=10, undo=True)
+                             font=self.body_font, padx=14, pady=13, undo=True,
+                             height=7, spacing1=2, spacing3=5)
             editor.pack(fill="both", expand=True)
-            editor.insert("1.0", "")
 
-            foot = tk.Frame(win, bg=BG)
-            foot.pack(fill="x", padx=18, pady=(0, 14))
+            foot = tk.Frame(panel, bg=BG)
+            foot.pack(fill="x", padx=20, pady=(0, 17))
 
             def close(value):
                 if state["closed"]:
@@ -348,16 +357,19 @@ class UI:
                 value = editor.get("1.0", "end-1c").strip()
                 if value:
                     close(value)
+                else:
+                    editor.focus_set()
                 return "break"
 
-            tk.Button(foot, text="Apply  Ctrl+Enter", command=submit, bg=ACCENT,
-                      fg="#142033", activebackground="#a8c7ff", relief="flat",
-                      borderwidth=0, highlightthickness=0, font=self.font,
-                      padx=16, pady=7, cursor="hand2").pack(side="right")
+            tk.Button(foot, text="Apply  ·  Ctrl+Enter", command=submit,
+                      bg=ACCENT, fg="#ffffff", activebackground="#244fae",
+                      activeforeground="#ffffff", relief="flat", borderwidth=0,
+                      highlightthickness=0, font=self.font, padx=17, pady=8,
+                      cursor="hand2").pack(side="right")
             tk.Button(foot, text="Cancel", command=lambda: close(None), bg=ROW, fg=FG,
                       activebackground=BORDER, relief="flat", borderwidth=0,
-                      highlightthickness=0, font=self.font, padx=14, pady=7,
-                      cursor="hand2").pack(side="right", padx=8)
+                      highlightthickness=0, font=self.font, padx=16, pady=8,
+                      cursor="hand2").pack(side="right", padx=9)
             win.bind("<Control-Return>", submit)
             win.bind("<Escape>", lambda _e: close(None))
             win.protocol("WM_DELETE_WINDOW", lambda: close(None))
@@ -439,7 +451,7 @@ class UI:
             win.title(f"polisher · {title}")
             win.configure(bg=BG)
             win.attributes("-topmost", True)
-            width, height = 760, 460
+            width, height = 820, 520
             x = (win.winfo_screenwidth() - width) // 2
             y = (win.winfo_screenheight() - height) // 3
             win.geometry(f"{width}x{height}+{x}+{y}")
@@ -455,9 +467,9 @@ class UI:
             body_shell = tk.Frame(win, bg=BORDER, padx=1, pady=1)
             body_shell.pack(fill="both", expand=True, padx=20, pady=5)
             body = tk.Text(body_shell, wrap="word", bg=PANEL, fg=FG, insertbackground=FG,
-                           relief="flat", padx=22, pady=20, borderwidth=0,
+                           relief="flat", padx=26, pady=24, borderwidth=0,
                            highlightthickness=0, font=self.body_font,
-                           spacing3=11, spacing1=3, spacing2=3, undo=False)
+                           spacing3=13, spacing1=4, spacing2=4, undo=False)
             body.pack(fill="both", expand=True)
             body.tag_configure("equal", foreground=FG)
             body.tag_configure("delete", foreground=DEL_FG, background=DEL_BG,
@@ -489,20 +501,20 @@ class UI:
                     body.insert("end", candidate)
                 body.configure(state="disabled")
                 for i, tab in enumerate(tabs):
-                    tab.configure(fg=BG if i == state["index"] else MUTED,
-                                  bg=ACCENT if i == state["index"] else BG)
+                    tab.configure(fg="#ffffff" if i == state["index"] else MUTED,
+                                  bg=ACCENT if i == state["index"] else ROW)
 
             def select(i):
                 if 0 <= i < len(options):
                     state["index"] = i
                     render()
 
-            tk.Label(bar, text="POLISHER", bg=BG, fg=ACCENT, font=self.small).pack(side="left", padx=(0, 9))
-            tk.Label(bar, text=title, bg=BG, fg=FG, font=self.heading).pack(side="left", padx=(0, 12))
+            tk.Label(bar, text="POLISHER", bg=BG, fg=ACCENT, font=self.small).pack(side="left", padx=(0, 10))
+            tk.Label(bar, text=title, bg=BG, fg=FG, font=self.heading).pack(side="left", padx=(0, 15))
             if len(options) > 1:
                 for i in range(len(options)):
-                    tab = tk.Label(bar, text=str(i + 1), bg=BG, fg=MUTED, font=self.small,
-                                   cursor="hand2", padx=8, pady=2)
+                    tab = tk.Label(bar, text=f"Option {i + 1}", bg=ROW, fg=MUTED, font=self.small,
+                                   cursor="hand2", padx=11, pady=6)
                     tab.pack(side="left", padx=1)
                     tab.bind("<Button-1>", lambda e, i=i: select(i))
                     tabs.append(tab)
@@ -511,8 +523,9 @@ class UI:
                            activeforeground=FG, highlightthickness=0, borderwidth=0,
                            font=self.small, padx=5).pack(side="right")
 
-            tk.Button(foot, text="Replace text  ↵", command=lambda: close(options[state["index"]]),
-                      bg=ACCENT, fg="#142033", activebackground="#a8c7ff", relief="flat",
+            tk.Button(foot, text="Use this version  ↵", command=lambda: close(options[state["index"]]),
+                      bg=ACCENT, fg="#ffffff", activebackground="#244fae",
+                      activeforeground="#ffffff", relief="flat",
                       borderwidth=0, highlightthickness=0, font=self.font,
                       padx=18, pady=8, cursor="hand2").pack(side="right")
             tk.Button(foot, text="Cancel", command=lambda: close(None), bg=ROW, fg=FG,

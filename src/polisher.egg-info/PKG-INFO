@@ -26,7 +26,7 @@ Polisher is a small desktop utility for editing selected text with an LLM. Selec
 
 The menu workflow is: **choose an action → choose its option (for example Polish → light / medium / hard) → review the result → Replace**. Press `Esc` to cancel at any stage. In the review window, use `1`, `2`, `3` to switch between suggestions, `Enter` or **Replace** to apply, and `Esc` to keep the original. Your application's undo command (`Ctrl+Z` or `Cmd+Z`) undoes the replacement.
 
-The popup uses the system font when available (Inter or Ubuntu on Linux), a dark high-contrast palette and clearer spacing. The review panel uses larger 14 pt text and bold, high-contrast inserted/deleted text so alternatives remain readable when change highlighting is enabled. It is positioned near the mouse pointer. Status and error messages appear at that same location. A successful replacement displays “text replaced”; an unchanged result displays “no changes suggested”; errors include a reason rather than silently leaving the selection untouched.
+The popup and review panel use a readable system UI font, with larger, regular-weight text and clear spacing. Insertions and deletions are highlighted with contrasting colors without making the text bold. The review panel is centered on screen. Status and error messages appear near the mouse pointer. A successful replacement displays “text replaced”; an unchanged result displays “no changes suggested”; errors include a reason rather than silently leaving the selection untouched.
 
 ## Actions
 
@@ -39,10 +39,9 @@ The popup uses the system font when available (Inter or Ubuntu on Linux), a dark
 - **Compress** — express the same ideas in fewer words.
 - **Expand** — add helpful explanation or detail without inventing facts.
 - **Synonym** — suggest replacements for a selected word or phrase.
-- **Fix grammar** — correct grammar, spelling and punctuation only.
-- **Academic tone** — rewrite in a precise scientific register.
+- **Custom prompt** — enter a one-off instruction describing exactly how the selected text should be edited.
 
-The `Ctrl+Alt+P` shortcut always uses medium polish. The menu exposes the three intensity choices and all other actions.
+The `Ctrl+Alt+P` shortcut always uses medium polish. The menu exposes the three intensity choices, the other built-in actions and **Custom prompt**. In the custom prompt window, enter a multi-line instruction and press `Ctrl+Enter` or **Apply**.
 
 ## Requirements
 
