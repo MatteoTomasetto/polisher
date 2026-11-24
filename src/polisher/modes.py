@@ -59,7 +59,7 @@ BUILTIN_MODES: dict[str, dict] = {
             "exactly the same meaning. Write it in a {choice} tone."
         ),
         "choices": ["neutral", "formal", "casual", "friendly", "confident", "persuasive",
-                    "empathetic", "academic"],
+                    "empathetic"],
         "choice_label": "tone",
         "default_choice": "neutral",
     },
@@ -100,21 +100,6 @@ BUILTIN_MODES: dict[str, dict] = {
             "selection, not a list. Keep capitalisation and inflection (tense, number)."
         ),
         "suggestions": 5,
-    },
-    "grammar": {
-        "label": "fix grammar",
-        "prompt": (
-            "Fix only grammar, spelling and punctuation errors. Do not change wording or "
-            "style in any other way."
-        ),
-        "suggestions": 1,
-    },
-    "academic": {
-        "label": "academic tone",
-        "prompt": (
-            "Rewrite in a formal academic register suitable for a scientific paper: precise, "
-            "concise and objective. Preserve all technical content, numbers and citations."
-        ),
     },
 }
 

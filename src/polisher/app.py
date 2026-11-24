@@ -11,6 +11,7 @@ from .config import Config
 from .engine import Engine, EngineError
 from .history import History
 from .hotkeys import Hotkeys
+from .modes import Mode
 from .ui import Item
 
 
@@ -100,14 +101,21 @@ class App:
             choice = None
             if menu:
                 items = [Item(k, m.label, submenu=bool(m.choices)) for k, m in self.cfg.modes.items()]
+                items.append(Item("__custom_prompt__", "custom prompt"))
                 mode_key = self.ui.pick("polisher", items, pos)
                 if mode_key is None:
                     return
-                mode = self.cfg.modes[mode_key]
-                if mode.choices:
-                    choice = self._pick_choice(mode, pos)
-                    if choice is None:
+                if mode_key == "__custom_prompt__":
+                    prompt = self.ui.ask_prompt(pos)
+                    if prompt is None or not prompt.strip():
                         return
+                    mode = Mode(key="custom_prompt", label="custom prompt", prompt=prompt.strip())
+                else:
+                    mode = self.cfg.modes[mode_key]
+                    if mode.choices:
+                        choice = self._pick_choice(mode, pos)
+                        if choice is None:
+                            return
                 count, preview = None, settings.get("preview", True)
             else:
                 mode = self.cfg.modes[mode_key or settings["default_mode"]]
@@ -115,7 +123,13 @@ class App:
                 count = settings.get("quick_suggestions", 1)
                 preview = settings.get("quick_preview", False)
 
-            self.ui.show_busy(f"{mode.label}...", pos)
+            busy_labels = {
+                "polish": "polishing...", "rephrase": "rephrasing...",
+                "translate": "translating...", "compress": "compressing...",
+                "expand": "expanding...", "synonym": "finding synonyms...",
+                "custom_prompt": "applying custom prompt...",
+            }
+            self.ui.show_busy(busy_labels.get(mode.key, f"working on {mode.label}..."), pos)
             try:
                 options = self.engine.run(text, mode, settings, n=count, choice=choice)
             finally:

@@ -7,7 +7,9 @@ from polisher.modes import mode_from_dict
 def test_new_builtin_modes_and_choices():
     modes = load_config().modes
     assert {"polish", "rephrase", "translate", "compress", "expand"} <= set(modes)
+    assert "grammar" not in modes and "academic" not in modes
     assert "formal" in modes["rephrase"].choices and modes["rephrase"].choice_label == "tone"
+    assert "academic" not in modes["rephrase"].choices
     assert "italian" in modes["translate"].choices and modes["translate"].default() == "english"
     assert modes["polish"].choices == ("light", "medium", "hard")
     assert modes["polish"].default() == "medium"

@@ -46,13 +46,11 @@ class UI:
         self.font = tkfont.Font(root=self.root, family=family, size=11)
         self.small = tkfont.Font(root=self.root, family=family, size=9)
         self.heading = tkfont.Font(root=self.root, family=family, size=10, weight="bold")
-        # Use Tk's native text font for the reading pane rather than imposing a
-        # hand-picked family. It maps to the platform's standard readable UI font.
-        native_text = tkfont.nametofont("TkTextFont")
-        self.body_font = native_text.copy()
-        self.body_font.configure(size=12, weight="normal")
+        # Use the same known, platform-native family as the rest of the UI. Tk's
+        # default text font can be unexpectedly small or inconsistent on Linux.
+        self.body_font = tkfont.Font(root=self.root, family=family, size=13, weight="normal")
         self.diff_font = self.body_font.copy()
-        self.diff_font.configure(size=12, weight="normal")
+        self.diff_font.configure(size=13, weight="normal")
         self._jobs: queue.Queue = queue.Queue()
         self._busy: tk.Toplevel | None = None
         self.root.after(25, self._pump)
@@ -302,6 +300,69 @@ class UI:
             win.after(30000, lambda: close(None))  # never leave a stuck popup behind
             render()
             self._grab_focus(win)
+
+        return self.ask(build)
+
+    def ask_prompt(self, pos: tuple[int, int]) -> str | None:
+        """Ask for a free-form instruction to apply to the selected text."""
+        def build(root, done):
+            win = tk.Toplevel(root)
+            win.title("polisher · custom prompt")
+            win.configure(bg=BG)
+            win.attributes("-topmost", True)
+            win.transient(root)
+            width, height = 560, 340
+            x = max(0, (win.winfo_screenwidth() - width) // 2)
+            y = max(0, (win.winfo_screenheight() - height) // 3)
+            win.geometry(f"{width}x{height}+{x}+{y}")
+            state = {"closed": False}
+
+            tk.Label(win, text="CUSTOM PROMPT", bg=BG, fg=ACCENT,
+                     font=self.small, anchor="w").pack(fill="x", padx=18, pady=(16, 5))
+            tk.Label(win, text="What would you like me to do with the selected text?",
+                     bg=BG, fg=FG, font=self.font, anchor="w").pack(fill="x", padx=18, pady=(0, 10))
+
+            shell = tk.Frame(win, bg=BORDER, padx=1, pady=1)
+            shell.pack(fill="both", expand=True, padx=18, pady=(0, 12))
+            editor = tk.Text(shell, wrap="word", bg=PANEL, fg=FG, insertbackground=FG,
+                             relief="flat", borderwidth=0, highlightthickness=0,
+                             font=self.body_font, padx=12, pady=10, undo=True)
+            editor.pack(fill="both", expand=True)
+            editor.insert("1.0", "")
+
+            foot = tk.Frame(win, bg=BG)
+            foot.pack(fill="x", padx=18, pady=(0, 14))
+
+            def close(value):
+                if state["closed"]:
+                    return
+                state["closed"] = True
+                try:
+                    win.grab_release()
+                    win.destroy()
+                except tk.TclError:
+                    pass
+                done(value)
+
+            def submit(_event=None):
+                value = editor.get("1.0", "end-1c").strip()
+                if value:
+                    close(value)
+                return "break"
+
+            tk.Button(foot, text="Apply  Ctrl+Enter", command=submit, bg=ACCENT,
+                      fg="#142033", activebackground="#a8c7ff", relief="flat",
+                      borderwidth=0, highlightthickness=0, font=self.font,
+                      padx=16, pady=7, cursor="hand2").pack(side="right")
+            tk.Button(foot, text="Cancel", command=lambda: close(None), bg=ROW, fg=FG,
+                      activebackground=BORDER, relief="flat", borderwidth=0,
+                      highlightthickness=0, font=self.font, padx=14, pady=7,
+                      cursor="hand2").pack(side="right", padx=8)
+            win.bind("<Control-Return>", submit)
+            win.bind("<Escape>", lambda _e: close(None))
+            win.protocol("WM_DELETE_WINDOW", lambda: close(None))
+            self._grab_focus(win)
+            editor.focus_set()
 
         return self.ask(build)
 

@@ -17,6 +17,9 @@ class FakeUI:
             return "polish"
         return "medium"
 
+    def ask_prompt(self, pos):
+        return "Rewrite this as a concise, friendly email."
+
     def show_busy(self, *args):
         pass
 
@@ -107,3 +110,35 @@ def test_quick_preview_true_opens_review_for_quick_hotkey(monkeypatch):
 
     assert ui.review_calls == 1
     assert "PASTE:A polished sentence." in writes
+
+
+def test_custom_prompt_is_passed_to_engine(monkeypatch):
+    import polisher.app as app_module
+
+    class CustomPromptUI(FakeUI):
+        def pick(self, title, items, pos, **kwargs):
+            return "__custom_prompt__"
+
+    class RecordingEngine(FakeEngine):
+        def run(self, text, mode, settings, **kwargs):
+            self.mode = mode
+            return self.result
+
+    cfg = load_config()
+    ui = CustomPromptUI(chosen="A concise email.")
+    engine = RecordingEngine(["A concise email."])
+    app = App(cfg, ui, engine=engine)
+    monkeypatch.setattr(app_module, "get_active_window", lambda: WindowInfo())
+    monkeypatch.setattr(app_module.clipboard, "read", lambda: "previous")
+    monkeypatch.setattr(app_module.clipboard, "copy_selection", lambda: "rough text")
+    writes = []
+    monkeypatch.setattr(app_module.clipboard, "write", lambda value: writes.append(value))
+    monkeypatch.setattr(app_module.clipboard, "paste_text", lambda value: writes.append("PASTE:" + value))
+    monkeypatch.setattr(app_module, "reactivate", lambda window: None)
+    monkeypatch.setattr(app_module.time, "sleep", lambda *_: None)
+
+    app._process(None, True)
+
+    assert engine.mode.key == "custom_prompt"
+    assert engine.mode.prompt == "Rewrite this as a concise, friendly email."
+    assert "PASTE:A concise email." in writes

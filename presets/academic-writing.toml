@@ -20,5 +20,5 @@ suggestions = 2
 [[profiles]]
 name = "Overleaf (academic by default)"
 match_title = "overleaf"
-default_mode = "academic"
+default_mode = "polish"
 latex_aware = "always"

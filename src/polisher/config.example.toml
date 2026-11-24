@@ -40,8 +40,8 @@ model = "llama3.1"
 base_url = "http://localhost:11434"
 
 # --- Modes --------------------------------------------------------------------
-# Built in: polish (light/medium/hard), rephrase (tone), translate (language), compress, expand, synonym,
-# fix grammar, academic tone. Change the lists of tones/languages like this:
+# Built in: polish (light/medium/hard), rephrase (tone), translate (language), compress, expand, synonym.
+# Use the "custom prompt" item in the menu for a one-off instruction.
 #
 # [modes.translate]
 # choices = ["english", "italian", "french", "german", "swedish"]
@@ -73,7 +73,7 @@ base_url = "http://localhost:11434"
 # name = "Overleaf"
 # match_title = "Overleaf"
 # latex_aware = "always"
-# default_mode = "academic"
+# default_mode = "polish"
 # preview = false
 #
 # [[profiles]]
