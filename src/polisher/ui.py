@@ -26,7 +26,7 @@ INS_FG, INS_BG = "#b9f0d0", "#244638"
 _FONT_CANDIDATES = {
     "win32": ("Segoe UI", "Arial"),
     "darwin": ("SF Pro Text", ".AppleSystemUIFont", "Helvetica Neue"),
-    "linux": ("Inter", "Noto Sans", "Ubuntu", "DejaVu Sans"),
+    "linux": ("Liberation Sans", "Noto Sans", "DejaVu Sans", "Ubuntu"),
 }
 
 
@@ -45,14 +45,14 @@ class UI:
         platform = "win32" if sys.platform == "win32" else ("darwin" if sys.platform == "darwin" else "linux")
         family = next((f for f in _FONT_CANDIDATES[platform] if f in available),
                       tkfont.nametofont("TkDefaultFont").actual("family"))
-        self.font = tkfont.Font(root=self.root, family=family, size=11)
-        self.small = tkfont.Font(root=self.root, family=family, size=10)
-        self.heading = tkfont.Font(root=self.root, family=family, size=11, weight="bold")
+        self.font = tkfont.Font(root=self.root, family=family, size=11, weight="normal")
+        self.small = tkfont.Font(root=self.root, family=family, size=10, weight="normal")
+        self.heading = tkfont.Font(root=self.root, family=family, size=11, weight="normal")
         # Use the same known, platform-native family as the rest of the UI. Tk's
         # default text font can be unexpectedly small or inconsistent on Linux.
-        self.body_font = tkfont.Font(root=self.root, family=family, size=13, weight="normal")
+        self.body_font = tkfont.Font(root=self.root, family=family, size=14, weight="normal")
         self.diff_font = self.body_font.copy()
-        self.diff_font.configure(size=13, weight="normal")
+        self.diff_font.configure(size=14, weight="normal")
         self._jobs: queue.Queue = queue.Queue()
         self._busy: tk.Toplevel | None = None
         self.root.after(25, self._pump)
@@ -509,7 +509,6 @@ class UI:
                     state["index"] = i
                     render()
 
-            tk.Label(bar, text="POLISHER", bg=BG, fg=ACCENT, font=self.small).pack(side="left", padx=(0, 10))
             tk.Label(bar, text=title, bg=BG, fg=FG, font=self.heading).pack(side="left", padx=(0, 15))
             if len(options) > 1:
                 for i in range(len(options)):
